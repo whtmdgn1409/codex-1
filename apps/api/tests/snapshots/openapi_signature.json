@@ -1,0 +1,126 @@
+{
+  "title": "EPL Information Hub API",
+  "version": "0.1.0",
+  "paths": {
+    "/health": {
+      "get": {
+        "parameters": [],
+        "responses": [
+          "200"
+        ]
+      }
+    },
+    "/matches": {
+      "get": {
+        "parameters": [
+          {
+            "name": "round",
+            "in": "query",
+            "required": false,
+            "type": "integer|null"
+          },
+          {
+            "name": "month",
+            "in": "query",
+            "required": false,
+            "type": "integer|null"
+          },
+          {
+            "name": "team_id",
+            "in": "query",
+            "required": false,
+            "type": "integer|null"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          }
+        ],
+        "responses": [
+          "200",
+          "404",
+          "422"
+        ]
+      }
+    },
+    "/matches/{match_id}": {
+      "get": {
+        "parameters": [
+          {
+            "name": "match_id",
+            "in": "path",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "responses": [
+          "200",
+          "404",
+          "422"
+        ]
+      }
+    },
+    "/standings": {
+      "get": {
+        "parameters": [],
+        "responses": [
+          "200"
+        ]
+      }
+    },
+    "/stats/top": {
+      "get": {
+        "parameters": [
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          }
+        ],
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/teams": {
+      "get": {
+        "parameters": [],
+        "responses": [
+          "200"
+        ]
+      }
+    },
+    "/teams/{team_id}": {
+      "get": {
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    }
+  }
+}
