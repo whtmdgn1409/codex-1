@@ -31,6 +31,14 @@ make crawler-daily   # BATCH-001 일배치 runner(수동)
 make crawler-weekly  # BATCH-002 주배치 runner(수동)
 ```
 
+## Batch Scheduler
+- GitHub Actions `Batch Scheduler` 워크플로가 배치 자동 실행을 담당합니다.
+- 스케줄:
+  - 일배치: 매일 09:00 KST (`cron: 0 0 * * *`, UTC 기준)
+  - 주배치: 매주 목요일 12:00 KST (`cron: 0 3 * * 4`, UTC 기준)
+- 수동 실행:
+  - Actions > `Batch Scheduler` > `Run workflow`에서 `all | daily | weekly` 선택
+
 ## MVP Scope
 - 홈 대시보드
 - 일정/결과 + 매치 상세(라인업/스탯/타임라인)
@@ -61,7 +69,7 @@ CI 필수 체크 설정 가이드는 `docs/ci-required-checks.md`를 참고하�
 - `WEB-001`~`WEB-004` 1차 화면/연동 구현 (`apps/web`)
 - `WEB-005` 모바일 390px 대응 CSS 반영
 - `CRAWL-001` 초기 수집 파이프라인(샘플 소스+업서트) 구현
-- `BATCH-001`, `BATCH-002` 수동 실행 스켈레톤 적용 (스케줄러 연동 진행중)
+- `BATCH-001`, `BATCH-002` 스케줄러 연동 완료 (`Batch Scheduler`)
 
 ## Contribution Rules
 - 브랜치: `feat/<scope>-<short-desc>`, `fix/<scope>-<short-desc>`

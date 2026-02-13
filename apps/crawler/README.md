@@ -20,6 +20,13 @@ make crawler-daily   # BATCH-001 일배치(수동)
 make crawler-weekly  # BATCH-002 주배치(수동)
 ```
 
+## Batch Scheduler (GitHub Actions)
+- 워크플로: `.github/workflows/batch-scheduler.yml`
+- 자동 실행:
+  - 일배치: 매일 09:00 KST (`cron: 0 0 * * *`, UTC)
+  - 주배치: 매주 목요일 12:00 KST (`cron: 0 3 * * 4`, UTC)
+- 수동 실행: `workflow_dispatch` 입력값 `all | daily | weekly`
+
 기본 DB는 `DB_URL` 환경변수로 제어합니다.
 
 예시 (로컬 sqlite):

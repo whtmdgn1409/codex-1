@@ -1,0 +1,64 @@
+name: Batch Scheduler
+
+on:
+  workflow_dispatch:
+    inputs:
+      job:
+        description: "Batch job to run"
+        required: true
+        default: "all"
+        type: choice
+        options:
+          - all
+          - daily
+          - weekly
+  schedule:
+    # 09:00 KST every day (00:00 UTC)
+    - cron: "0 0 * * *"
+    # 12:00 KST every Thursday (03:00 UTC)
+    - cron: "0 3 * * 4"
+
+jobs:
+  daily:
+    if: |
+      github.event_name == 'workflow_dispatch' && (inputs.job == 'all' || inputs.job == 'daily') ||
+      github.event_name == 'schedule' && github.event.schedule == '0 0 * * *'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install crawler dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r apps/crawler/requirements.txt
+
+      - name: Run daily batch (BATCH-001)
+        run: make crawler-daily
+
+  weekly:
+    if: |
+      github.event_name == 'workflow_dispatch' && (inputs.job == 'all' || inputs.job == 'weekly') ||
+      github.event_name == 'schedule' && github.event.schedule == '0 3 * * 4'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install crawler dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r apps/crawler/requirements.txt
+
+      - name: Run weekly batch (BATCH-002)
+        run: make crawler-weekly

@@ -1,7 +1,7 @@
 # NEXT STEPS
 
 Last Updated: 2026-02-13
-Primary Focus: Batch 스케줄링 + Web 품질 고도화 + 운영 안정화
+Primary Focus: Crawler 실데이터 확장 + Web 품질 고도화 + 운영 안정화
 
 ## A) Current Status
 
@@ -20,11 +20,12 @@ Primary Focus: Batch 스케줄링 + Web 품질 고도화 + 운영 안정화
 ### Infra/CI
 - 완료: `CI / api` 워크플로 구성
 - 완료: 브랜치 보호 규칙에 `CI / api` 필수 체크 적용
+- 완료: `Batch Scheduler` 워크플로 추가 (일/주 배치 cron + 수동 실행)
 
 ### Crawler/Batch
 - 완료: `CRAWL-001` 초기 수집 파이프라인(샘플 소스 + 멱등 업서트)
-- 진행중: `BATCH-001` 일배치 runner 스켈레톤(`ingest-all`)
-- 진행중: `BATCH-002` 주배치 runner 스켈레톤(`ingest-matches`)
+- 완료: `BATCH-001` 일배치 스케줄러 연동 (`make crawler-daily`, 매일 09:00 KST)
+- 완료: `BATCH-002` 주배치 스케줄러 연동 (`make crawler-weekly`, 매주 목 12:00 KST)
 - 미완료: `BATCH-003`
 
 ### Known Issues / Risks
@@ -34,17 +35,17 @@ Primary Focus: Batch 스케줄링 + Web 품질 고도화 + 운영 안정화
 ## B) Next Priorities
 
 ### P0
-1. 배치 스케줄러 연동 마무리 (`BATCH-001`, `BATCH-002`)
-- 목적: 수동 runner를 스케줄 기반 운영으로 전환
-- DoD:
-  - 일배치/주배치 스케줄러(cron/워크플로) 연결
-  - 실패 시 비정상 종료 코드 및 로그 표준화
-
-2. Crawler 소스 확장 (FBref 실데이터 파서 도입)
+1. Crawler 소스 확장 (FBref 실데이터 파서 도입)
 - 목적: 샘플 데이터가 아닌 실제 시즌 데이터 적재
 - DoD:
   - FBref 테이블 파싱(팀/경기/스탯) 구현
   - 파싱 실패 케이스 로깅 및 재시도 전략 정의
+
+2. `BATCH-003` 실패 재시도/알림 설계 및 구현
+- 목적: 배치 실패에 대한 운영 가시성 확보
+- DoD:
+  - 재시도 정책(횟수/간격) 정의
+  - 실패 알림 채널(Slack 또는 이메일) 1개 이상 연동
 
 ### P1
 1. Web E2E/핵심 사용자 플로우 테스트 추가
@@ -64,7 +65,7 @@ Primary Focus: Batch 스케줄링 + Web 품질 고도화 + 운영 안정화
   - 업그레이드/대체 패키지 계획 수립
 
 ## C) In Progress
-- `BATCH-001`, `BATCH-002`: 수동 runner 스켈레톤 구현, 스케줄러 연동 진행중
+- `P0-2`: FBref 실데이터 파서 설계/도입 준비
 
 ## D) Done Log
 - 2026-02-13
@@ -75,6 +76,7 @@ Primary Focus: Batch 스케줄링 + Web 품질 고도화 + 운영 안정화
   - `web-lint`, `web-build`, `web-dev` 실행 검증 완료
   - `CRAWL-001` 초기 수집 파이프라인 구현 및 멱등 실행 확인
   - `BATCH-001`, `BATCH-002` 수동 runner 스켈레톤 상태 문서 반영
+  - `BATCH-001`, `BATCH-002` GitHub Actions 스케줄러 연동 완료 (`Batch Scheduler`)
 
 ## E) Working Rules
 1. 개발 시작 전
