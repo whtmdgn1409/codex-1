@@ -141,13 +141,23 @@ class PremierLeagueDataSource(DataSource):
                 return table.headers, table.rows
         return [], []
 
+    def _validate_headers(self, dataset: str, headers: list[str], required: list[str]) -> bool:
+        missing = [item for item in required if item not in headers]
+        if not missing:
+            return True
+        message = f"missing required headers for {dataset}: {missing}"
+        log_event("WARNING", "pl.parse.headers_missing", dataset=dataset, missing=missing, headers=headers)
+        if self.config.parse_strict:
+            raise ValueError(message)
+        return False
+
     def _parse_teams(self, html: str) -> list[TeamPayload]:
         headers, rows = self._extract_table_rows(html)
         if not rows:
             return []
         idx = {h: i for i, h in enumerate(headers)}
         required = ["name", "short_name", "stadium", "manager"]
-        if not all(k in idx for k in required):
+        if not self._validate_headers("teams", headers, required):
             return []
 
         payload: list[TeamPayload] = []
@@ -170,7 +180,7 @@ class PremierLeagueDataSource(DataSource):
             return []
         idx = {h: i for i, h in enumerate(headers)}
         required = ["player_id", "team_short_name", "name", "position", "jersey_num", "nationality"]
-        if not all(k in idx for k in required):
+        if not self._validate_headers("players", headers, required):
             return []
 
         payload: list[PlayerPayload] = []
@@ -197,7 +207,7 @@ class PremierLeagueDataSource(DataSource):
             return []
         idx = {h: i for i, h in enumerate(headers)}
         required = ["round", "match_date", "home_team_short_name", "away_team_short_name", "status"]
-        if not all(k in idx for k in required):
+        if not self._validate_headers("matches", headers, required):
             return []
 
         payload: list[MatchPayload] = []
@@ -234,7 +244,7 @@ class PremierLeagueDataSource(DataSource):
             "fouls",
             "corners",
         ]
-        if not all(k in idx for k in required):
+        if not self._validate_headers("match_stats", headers, required):
             return []
 
         payload: list[MatchStatPayload] = []

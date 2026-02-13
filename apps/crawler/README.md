@@ -46,11 +46,16 @@ PL_MATCH_STATS_URL=https://www.premierleague.com/stats
 PL_HTTP_RETRY_COUNT=3
 PL_HTTP_RETRY_BACKOFF_SECONDS=1.0
 PL_HTTP_TIMEOUT_SECONDS=20
+PL_PARSE_STRICT=0
 BATCH_RETRY_COUNT=3
 BATCH_RETRY_BACKOFF_SECONDS=2
 # 선택: Slack incoming webhook
 # BATCH_ALERT_SLACK_WEBHOOK=https://hooks.slack.com/services/xxx/yyy/zzz
 ```
+
+파서 실패 정책:
+- `PL_PARSE_STRICT=0` (기본): 헤더 불일치 시 로그 남기고 해당 데이터셋 스킵
+- `PL_PARSE_STRICT=1`: 헤더 불일치 시 예외 발생(배치 실패 처리)
 
 예시 (로컬 sqlite):
 ```bash

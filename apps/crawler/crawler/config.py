@@ -26,6 +26,7 @@ class SourceConfig:
     timeout_seconds: int
     retry_count: int
     retry_backoff_seconds: float
+    parse_strict: bool
 
 
 @dataclass
@@ -81,6 +82,7 @@ def load_db_config() -> DbConfig:
 
 
 def load_source_config() -> SourceConfig:
+    parse_strict_raw = os.getenv("PL_PARSE_STRICT", "0").strip().lower()
     return SourceConfig(
         source=os.getenv("CRAWLER_DATA_SOURCE", "sample").strip().lower(),
         teams_url=os.getenv("PL_TEAMS_URL", "https://www.premierleague.com/en/clubs"),
@@ -90,6 +92,7 @@ def load_source_config() -> SourceConfig:
         timeout_seconds=int(os.getenv("PL_HTTP_TIMEOUT_SECONDS", "20")),
         retry_count=int(os.getenv("PL_HTTP_RETRY_COUNT", "3")),
         retry_backoff_seconds=float(os.getenv("PL_HTTP_RETRY_BACKOFF_SECONDS", "1.0")),
+        parse_strict=parse_strict_raw in {"1", "true", "yes", "on"},
     )
 
 

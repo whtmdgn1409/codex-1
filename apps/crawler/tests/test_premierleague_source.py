@@ -16,6 +16,7 @@ def _source_config() -> SourceConfig:
         timeout_seconds=1,
         retry_count=3,
         retry_backoff_seconds=0.0,
+        parse_strict=False,
     )
 
 
@@ -97,3 +98,37 @@ def test_premierleague_fetch_retry(monkeypatch: pytest.MonkeyPatch) -> None:
     teams = source.load_teams()
     assert len(teams) == 1
     assert attempts["count"] == 3
+
+
+def test_premierleague_parse_non_strict_returns_empty_on_missing_headers(monkeypatch: pytest.MonkeyPatch) -> None:
+    html = """
+    <html><body>
+    <table>
+      <tr><th>club</th><th>abbr</th></tr>
+      <tr><td>Arsenal FC</td><td>ARS</td></tr>
+    </table>
+    </body></html>
+    """
+    source = PremierLeagueDataSource(_source_config())
+    monkeypatch.setattr(source, "_http_get", lambda _: html)
+
+    teams = source.load_teams()
+    assert teams == []
+
+
+def test_premierleague_parse_strict_raises_on_missing_headers(monkeypatch: pytest.MonkeyPatch) -> None:
+    html = """
+    <html><body>
+    <table>
+      <tr><th>club</th><th>abbr</th></tr>
+      <tr><td>Arsenal FC</td><td>ARS</td></tr>
+    </table>
+    </body></html>
+    """
+    config = _source_config()
+    config.parse_strict = True
+    source = PremierLeagueDataSource(config)
+    monkeypatch.setattr(source, "_http_get", lambda _: html)
+
+    with pytest.raises(ValueError):
+        source.load_teams()

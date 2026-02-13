@@ -15,7 +15,9 @@
   - 타임아웃: `PL_HTTP_TIMEOUT_SECONDS`
 - 파싱:
   - HTML table 기반 1차 파서(POC)
-  - 필드 매핑 실패 시 빈 리스트 반환 + 오류 로그
+  - 필드 매핑 실패 시 정책 분기:
+    - `PL_PARSE_STRICT=0` -> 빈 리스트 반환 + 경고 로그
+    - `PL_PARSE_STRICT=1` -> 예외 발생 + 배치 실패 처리
 
 ## Field Mapping (Crawler Payload)
 - `teams`: `name`, `short_name`, `logo_url`, `stadium`, `manager`
