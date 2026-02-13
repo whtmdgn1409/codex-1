@@ -1,7 +1,7 @@
 # NEXT STEPS
 
 Last Updated: 2026-02-13
-Primary Focus: Crawler MVP + Web 품질 고도화 + 운영 안정화
+Primary Focus: Batch 스케줄링 + Web 품질 고도화 + 운영 안정화
 
 ## A) Current Status
 
@@ -22,7 +22,8 @@ Primary Focus: Crawler MVP + Web 품질 고도화 + 운영 안정화
 - 완료: 브랜치 보호 규칙에 `CI / api` 필수 체크 적용
 
 ### Crawler/Batch
-- 미완료: `CRAWL-001`, `BATCH-001`~`BATCH-003`
+- 완료: `CRAWL-001` 초기 수집 파이프라인(샘플 소스 + 멱등 업서트)
+- 미완료: `BATCH-001`~`BATCH-003`
 
 ### Known Issues / Risks
 - `apps/web` 의존성에서 보안 취약점 경고 존재 (`npm audit` 기준 4건)
@@ -31,17 +32,17 @@ Primary Focus: Crawler MVP + Web 품질 고도화 + 운영 안정화
 ## B) Next Priorities
 
 ### P0
-1. `CRAWL-001` 초기 수집 파이프라인 구현
-- 목적: 실제 데이터 적재 루프 확보
-- DoD:
-  - 팀/선수/경기/기초 스탯 1회 적재 성공
-  - 재실행 시 중복 없는 업서트 보장
-
-2. 배치 실행 스켈레톤 (`BATCH-001`, `BATCH-002`)
+1. 배치 실행 스켈레톤 (`BATCH-001`, `BATCH-002`)
 - 목적: 수동 실행이 아닌 스케줄 기반 운영 준비
 - DoD:
   - 일배치/주배치 진입 스크립트 분리
   - 실패 시 비정상 종료 코드 및 로그 표준화
+
+2. Crawler 소스 확장 (FBref 실데이터 파서 도입)
+- 목적: 샘플 데이터가 아닌 실제 시즌 데이터 적재
+- DoD:
+  - FBref 테이블 파싱(팀/경기/스탯) 구현
+  - 파싱 실패 케이스 로깅 및 재시도 전략 정의
 
 ### P1
 1. Web E2E/핵심 사용자 플로우 테스트 추가
@@ -70,6 +71,7 @@ Primary Focus: Crawler MVP + Web 품질 고도화 + 운영 안정화
   - 브랜치 보호 적용 및 CI 통과 확인
   - Web 초기 라우트 및 UI/연동 구현
   - `web-lint`, `web-build`, `web-dev` 실행 검증 완료
+  - `CRAWL-001` 초기 수집 파이프라인 구현 및 멱등 실행 확인
 
 ## E) Working Rules
 1. 개발 시작 전
