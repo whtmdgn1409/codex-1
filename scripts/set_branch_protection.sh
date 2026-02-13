@@ -29,18 +29,26 @@ gh api \
   --method PUT \
   -H "Accept: application/vnd.github+json" \
   "/repos/${REPO}/branches/${BRANCH}/protection" \
-  -f required_status_checks.strict=true \
-  -f enforce_admins=false \
-  -F required_status_checks.contexts[]='CI / api' \
-  -f required_pull_request_reviews.dismiss_stale_reviews=true \
-  -f required_pull_request_reviews.require_code_owner_reviews=false \
-  -f required_pull_request_reviews.required_approving_review_count=1 \
-  -f required_conversation_resolution=true \
-  -f restrictions= \
-  -f allow_force_pushes=false \
-  -f allow_deletions=false \
-  -f required_linear_history=true \
-  -f block_creations=false \
-  -f required_signatures=false
+  --input - <<'JSON'
+{
+  "required_status_checks": {
+    "strict": true,
+    "contexts": ["CI / api"]
+  },
+  "enforce_admins": false,
+  "required_pull_request_reviews": {
+    "dismiss_stale_reviews": true,
+    "require_code_owner_reviews": false,
+    "required_approving_review_count": 1
+  },
+  "required_conversation_resolution": true,
+  "restrictions": null,
+  "allow_force_pushes": false,
+  "allow_deletions": false,
+  "required_linear_history": true,
+  "block_creations": false,
+  "required_signatures": false
+}
+JSON
 
 echo "[done] branch protection updated"
