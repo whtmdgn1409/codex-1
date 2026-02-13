@@ -80,7 +80,7 @@ def test_weekly_batch_success_returns_true_and_zero_exit(tmp_path: Path) -> None
 
 
 def test_weekly_batch_failure_returns_false_and_non_zero_exit(tmp_path: Path) -> None:
-    db_url = f"sqlite:///{(tmp_path / 'weekly_fail.db').as_posix()}"
+    db_url = f"sqlite:///{(tmp_path / 'missing_parent' / 'weekly_fail.db').as_posix()}"
 
     assert _run_weekly_batch(db_url) is False
 
