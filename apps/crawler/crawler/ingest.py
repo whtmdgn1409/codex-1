@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 from crawler.db import Database
-from crawler.sources.sample_data import MATCH_STATS, MATCHES, PLAYERS, TEAMS
+from crawler.sources import get_data_source
+from crawler.sources.types import MatchPayload, MatchStatPayload, PlayerPayload, TeamPayload
 
 
-def upsert_teams(db: Database) -> None:
-    for team in TEAMS:
+def upsert_teams(db: Database, teams: list[TeamPayload] | None = None) -> None:
+    if teams is None:
+        teams = get_data_source().load_teams()
+    for team in teams:
         if db.config.engine == "sqlite":
             db.execute(
                 """
@@ -51,10 +54,12 @@ def _team_id_map(db: Database) -> dict[str, int]:
     return {str(row["short_name"]): int(row["team_id"]) for row in rows}
 
 
-def upsert_players(db: Database) -> None:
+def upsert_players(db: Database, players: list[PlayerPayload] | None = None) -> None:
+    if players is None:
+        players = get_data_source().load_players()
     team_map = _team_id_map(db)
 
-    for player in PLAYERS:
+    for player in players:
         team_id = team_map[player["team_short_name"]]
 
         if db.config.engine == "sqlite":
@@ -105,10 +110,12 @@ def upsert_players(db: Database) -> None:
             )
 
 
-def upsert_matches(db: Database) -> None:
+def upsert_matches(db: Database, matches: list[MatchPayload] | None = None) -> None:
+    if matches is None:
+        matches = get_data_source().load_matches()
     team_map = _team_id_map(db)
 
-    for match in MATCHES:
+    for match in matches:
         home_team_id = team_map[match["home_team_short_name"]]
         away_team_id = team_map[match["away_team_short_name"]]
 
@@ -161,11 +168,13 @@ def _match_id_map(db: Database) -> dict[tuple[int, int, int], int]:
     return {(int(r["round"]), int(r["home_team_id"]), int(r["away_team_id"])): int(r["match_id"]) for r in rows}
 
 
-def upsert_match_stats(db: Database) -> None:
+def upsert_match_stats(db: Database, match_stats: list[MatchStatPayload] | None = None) -> None:
+    if match_stats is None:
+        match_stats = get_data_source().load_match_stats()
     team_map = _team_id_map(db)
     match_map = _match_id_map(db)
 
-    for stat in MATCH_STATS:
+    for stat in match_stats:
         home_team_id = team_map[stat["home_team_short_name"]]
         away_team_id = team_map[stat["away_team_short_name"]]
         key = (int(stat["round"]), home_team_id, away_team_id)
@@ -219,10 +228,11 @@ def upsert_match_stats(db: Database) -> None:
 
 
 def ingest_all(db: Database) -> None:
-    upsert_teams(db)
-    upsert_players(db)
-    upsert_matches(db)
-    upsert_match_stats(db)
+    source = get_data_source()
+    upsert_teams(db, source.load_teams())
+    upsert_players(db, source.load_players())
+    upsert_matches(db, source.load_matches())
+    upsert_match_stats(db, source.load_match_stats())
 
 
 def summary(db: Database) -> dict[str, int]:

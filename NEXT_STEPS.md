@@ -35,10 +35,10 @@ Primary Focus: Crawler 실데이터 확장 + Web 품질 고도화 + 운영 안�
 ## B) Next Priorities
 
 ### P0
-1. Crawler 소스 확장 (FBref 실데이터 파서 도입)
+1. Crawler 소스 확장 (Premier League 공식 사이트 파서 도입)
 - 목적: 샘플 데이터가 아닌 실제 시즌 데이터 적재
 - DoD:
-  - FBref 테이블 파싱(팀/경기/스탯) 구현
+  - 공식 사이트 데이터 파싱(팀/경기/핵심 스탯) 구현
   - 파싱 실패 케이스 로깅 및 재시도 전략 정의
 
 2. `BATCH-003` 실패 재시도/알림 설계 및 구현
@@ -65,7 +65,7 @@ Primary Focus: Crawler 실데이터 확장 + Web 품질 고도화 + 운영 안�
   - 업그레이드/대체 패키지 계획 수립
 
 ## C) In Progress
-- `P0-2`: FBref 실데이터 파서 설계/도입 준비
+- `P0-1`: Premier League 공식 사이트 기반 데이터소스(`pl`) POC 구현 진행중
 
 ## D) Done Log
 - 2026-02-13

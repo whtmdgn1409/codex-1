@@ -6,6 +6,7 @@ from crawler.config import load_db_config
 from crawler.db import Database
 from crawler.ingest import ingest_all, summary, upsert_matches, upsert_teams
 from crawler.logging_utils import log_event
+from crawler.sources import get_data_source
 
 
 def daily_update() -> int:
@@ -43,5 +44,6 @@ def _run_daily(db: Database) -> None:
 
 
 def _run_weekly(db: Database) -> None:
-    upsert_teams(db)
-    upsert_matches(db)
+    source = get_data_source()
+    upsert_teams(db, source.load_teams())
+    upsert_matches(db, source.load_matches())

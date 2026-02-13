@@ -28,6 +28,21 @@ make crawler-weekly  # BATCH-002 주배치(수동)
 - 수동 실행: `workflow_dispatch` 입력값 `all | daily | weekly`
 
 기본 DB는 `DB_URL` 환경변수로 제어합니다.
+데이터 소스는 `CRAWLER_DATA_SOURCE`로 제어합니다.
+- `sample` (기본): 내장 샘플 데이터
+- `pl`: Premier League 공식 사이트 POC 파서
+
+`pl` 사용 시 URL/재시도 설정:
+```bash
+CRAWLER_DATA_SOURCE=pl
+PL_TEAMS_URL=https://www.premierleague.com/en/clubs
+PL_MATCHES_URL=https://www.premierleague.com/en/matches
+PL_PLAYERS_URL=https://www.premierleague.com/stats/top/players/goals
+PL_MATCH_STATS_URL=https://www.premierleague.com/stats
+PL_HTTP_RETRY_COUNT=3
+PL_HTTP_RETRY_BACKOFF_SECONDS=1.0
+PL_HTTP_TIMEOUT_SECONDS=20
+```
 
 예시 (로컬 sqlite):
 ```bash

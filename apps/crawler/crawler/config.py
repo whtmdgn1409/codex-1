@@ -16,6 +16,18 @@ class DbConfig:
     database: str | None
 
 
+@dataclass
+class SourceConfig:
+    source: str
+    teams_url: str
+    players_url: str
+    matches_url: str
+    match_stats_url: str
+    timeout_seconds: int
+    retry_count: int
+    retry_backoff_seconds: float
+
+
 def load_db_config() -> DbConfig:
     db_url = os.getenv("DB_URL", "sqlite:///./apps/crawler/dev_crawler.db")
     parsed = urlparse(db_url)
@@ -54,3 +66,16 @@ def load_db_config() -> DbConfig:
         )
 
     raise ValueError(f"unsupported DB_URL scheme: {parsed.scheme}")
+
+
+def load_source_config() -> SourceConfig:
+    return SourceConfig(
+        source=os.getenv("CRAWLER_DATA_SOURCE", "sample").strip().lower(),
+        teams_url=os.getenv("PL_TEAMS_URL", "https://www.premierleague.com/en/clubs"),
+        players_url=os.getenv("PL_PLAYERS_URL", "https://www.premierleague.com/stats/top/players/goals"),
+        matches_url=os.getenv("PL_MATCHES_URL", "https://www.premierleague.com/en/matches"),
+        match_stats_url=os.getenv("PL_MATCH_STATS_URL", "https://www.premierleague.com/stats"),
+        timeout_seconds=int(os.getenv("PL_HTTP_TIMEOUT_SECONDS", "20")),
+        retry_count=int(os.getenv("PL_HTTP_RETRY_COUNT", "3")),
+        retry_backoff_seconds=float(os.getenv("PL_HTTP_RETRY_BACKOFF_SECONDS", "1.0")),
+    )

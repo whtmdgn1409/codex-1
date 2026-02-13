@@ -52,6 +52,7 @@ make crawler-weekly  # BATCH-002 주배치 runner(수동)
 API 이후 실행 계획은 `docs/next-development-plan.md`를 따릅니다.
 실행 기준 문서는 `NEXT_STEPS.md`를 따릅니다.
 CI 필수 체크 설정 가이드는 `docs/ci-required-checks.md`를 참고하세요.
+공식 사이트 크롤링 POC 스펙은 `docs/premierleague-crawling-poc.md`를 참고하세요.
 
 ## NEXT_STEPS 운영 규칙
 - 개발 시작 전: `NEXT_STEPS.md` 확인 (Primary Focus + P0/P1 우선순위)
@@ -69,6 +70,7 @@ CI 필수 체크 설정 가이드는 `docs/ci-required-checks.md`를 참고하�
 - `WEB-001`~`WEB-004` 1차 화면/연동 구현 (`apps/web`)
 - `WEB-005` 모바일 390px 대응 CSS 반영
 - `CRAWL-001` 초기 수집 파이프라인(샘플 소스+업서트) 구현
+- `CRAWL-002` 공식 사이트(`premierleague.com`) 기반 `pl` 데이터소스 POC 진행중
 - `BATCH-001`, `BATCH-002` 스케줄러 연동 완료 (`Batch Scheduler`)
 
 ## Contribution Rules
