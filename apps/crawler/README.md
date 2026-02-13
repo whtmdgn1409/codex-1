@@ -14,6 +14,12 @@ make crawler-ingest
 make crawler-summary
 ```
 
+## Batch Runner (Skeleton)
+```bash
+make crawler-daily   # BATCH-001 일배치(수동)
+make crawler-weekly  # BATCH-002 주배치(수동)
+```
+
 기본 DB는 `DB_URL` 환경변수로 제어합니다.
 
 예시 (로컬 sqlite):

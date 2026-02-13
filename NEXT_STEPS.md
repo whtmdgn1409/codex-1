@@ -23,7 +23,9 @@ Primary Focus: Batch 스케줄링 + Web 품질 고도화 + 운영 안정화
 
 ### Crawler/Batch
 - 완료: `CRAWL-001` 초기 수집 파이프라인(샘플 소스 + 멱등 업서트)
-- 미완료: `BATCH-001`~`BATCH-003`
+- 진행중: `BATCH-001` 일배치 runner 스켈레톤(`ingest-all`)
+- 진행중: `BATCH-002` 주배치 runner 스켈레톤(`ingest-matches`)
+- 미완료: `BATCH-003`
 
 ### Known Issues / Risks
 - `apps/web` 의존성에서 보안 취약점 경고 존재 (`npm audit` 기준 4건)
@@ -32,10 +34,10 @@ Primary Focus: Batch 스케줄링 + Web 품질 고도화 + 운영 안정화
 ## B) Next Priorities
 
 ### P0
-1. 배치 실행 스켈레톤 (`BATCH-001`, `BATCH-002`)
-- 목적: 수동 실행이 아닌 스케줄 기반 운영 준비
+1. 배치 스케줄러 연동 마무리 (`BATCH-001`, `BATCH-002`)
+- 목적: 수동 runner를 스케줄 기반 운영으로 전환
 - DoD:
-  - 일배치/주배치 진입 스크립트 분리
+  - 일배치/주배치 스케줄러(cron/워크플로) 연결
   - 실패 시 비정상 종료 코드 및 로그 표준화
 
 2. Crawler 소스 확장 (FBref 실데이터 파서 도입)
@@ -62,7 +64,7 @@ Primary Focus: Batch 스케줄링 + Web 품질 고도화 + 운영 안정화
   - 업그레이드/대체 패키지 계획 수립
 
 ## C) In Progress
-- 없음
+- `BATCH-001`, `BATCH-002`: 수동 runner 스켈레톤 구현, 스케줄러 연동 진행중
 
 ## D) Done Log
 - 2026-02-13
@@ -72,6 +74,7 @@ Primary Focus: Batch 스케줄링 + Web 품질 고도화 + 운영 안정화
   - Web 초기 라우트 및 UI/연동 구현
   - `web-lint`, `web-build`, `web-dev` 실행 검증 완료
   - `CRAWL-001` 초기 수집 파이프라인 구현 및 멱등 실행 확인
+  - `BATCH-001`, `BATCH-002` 수동 runner 스켈레톤 상태 문서 반영
 
 ## E) Working Rules
 1. 개발 시작 전

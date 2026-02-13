@@ -1,4 +1,4 @@
-.PHONY: setup lint test test-unit test-openapi test-integration dev web-setup web-dev web-build web-lint crawler-setup crawler-ingest crawler-summary crawler-test
+.PHONY: setup lint test test-unit test-openapi test-integration dev web-setup web-dev web-build web-lint crawler-setup crawler-ingest crawler-daily crawler-weekly crawler-summary crawler-test
 
 setup:
 	python3 -m pip install -r apps/api/requirements.txt
@@ -40,6 +40,12 @@ crawler-setup:
 
 crawler-ingest:
 	PYTHONPATH=apps/crawler python3 -m crawler.cli ingest-all
+
+crawler-daily:
+	python3 apps/crawler/scripts/run_daily.py
+
+crawler-weekly:
+	python3 apps/crawler/scripts/run_weekly.py
 
 crawler-summary:
 	PYTHONPATH=apps/crawler python3 -m crawler.cli summary

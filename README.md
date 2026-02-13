@@ -27,6 +27,8 @@ make web-setup  # Web 의존성 설치 (npm)
 make web-dev    # Web 개발 서버 실행 (Next.js, :3000)
 make crawler-ingest  # Crawler 샘플 수집/적재 실행
 make crawler-summary # Crawler 적재 결과 카운트 확인
+make crawler-daily   # BATCH-001 일배치 runner(수동)
+make crawler-weekly  # BATCH-002 주배치 runner(수동)
 ```
 
 ## MVP Scope
@@ -59,6 +61,7 @@ CI 필수 체크 설정 가이드는 `docs/ci-required-checks.md`를 참고하�
 - `WEB-001`~`WEB-004` 1차 화면/연동 구현 (`apps/web`)
 - `WEB-005` 모바일 390px 대응 CSS 반영
 - `CRAWL-001` 초기 수집 파이프라인(샘플 소스+업서트) 구현
+- `BATCH-001`, `BATCH-002` 수동 실행 스켈레톤 적용 (스케줄러 연동 진행중)
 
 ## Contribution Rules
 - 브랜치: `feat/<scope>-<short-desc>`, `fix/<scope>-<short-desc>`
