@@ -26,6 +26,10 @@ make crawler-weekly  # BATCH-002 주배치(수동)
   - 일배치: 매일 09:00 KST (`cron: 0 0 * * *`, UTC)
   - 주배치: 매주 목요일 12:00 KST (`cron: 0 3 * * 4`, UTC)
 - 수동 실행: `workflow_dispatch` 입력값 `all | daily | weekly`
+- 재시도/알림(BATCH-003):
+  - `BATCH_RETRY_COUNT` (기본 `1`)
+  - `BATCH_RETRY_BACKOFF_SECONDS` (기본 `1.0`)
+  - `BATCH_ALERT_SLACK_WEBHOOK` (설정 시 최종 실패 알림 전송)
 
 기본 DB는 `DB_URL` 환경변수로 제어합니다.
 데이터 소스는 `CRAWLER_DATA_SOURCE`로 제어합니다.
@@ -42,6 +46,10 @@ PL_MATCH_STATS_URL=https://www.premierleague.com/stats
 PL_HTTP_RETRY_COUNT=3
 PL_HTTP_RETRY_BACKOFF_SECONDS=1.0
 PL_HTTP_TIMEOUT_SECONDS=20
+BATCH_RETRY_COUNT=3
+BATCH_RETRY_BACKOFF_SECONDS=2
+# 선택: Slack incoming webhook
+# BATCH_ALERT_SLACK_WEBHOOK=https://hooks.slack.com/services/xxx/yyy/zzz
 ```
 
 예시 (로컬 sqlite):

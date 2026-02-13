@@ -47,7 +47,7 @@ DoD
 ## Milestone 5: Batch & Ops (Week 6-8)
 - [x] `BATCH-001` 일배치(매일 09:00) 스케줄러 (`Batch Scheduler` + `make crawler-daily`)
 - [x] `BATCH-002` 주간 일정 동기화(목 12:00) (`Batch Scheduler` + `make crawler-weekly`)
-- [ ] `BATCH-003` 실패 재시도/알림(Slack 또는 이메일)
+- [x] `BATCH-003` 실패 재시도/알림(Slack webhook)
 - [ ] `OPS-004` 모니터링/로그 대시보드
 - [ ] `REL-001` 스테이징/운영 배포
 

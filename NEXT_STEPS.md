@@ -26,7 +26,7 @@ Primary Focus: Crawler 실데이터 확장 + Web 품질 고도화 + 운영 안�
 - 완료: `CRAWL-001` 초기 수집 파이프라인(샘플 소스 + 멱등 업서트)
 - 완료: `BATCH-001` 일배치 스케줄러 연동 (`make crawler-daily`, 매일 09:00 KST)
 - 완료: `BATCH-002` 주배치 스케줄러 연동 (`make crawler-weekly`, 매주 목 12:00 KST)
-- 미완료: `BATCH-003`
+- 완료: `BATCH-003` 실패 재시도/Slack 알림 연동 (`BATCH_RETRY_*`, `BATCH_ALERT_SLACK_WEBHOOK`)
 
 ### Known Issues / Risks
 - `apps/web` 의존성에서 보안 취약점 경고 존재 (`npm audit` 기준 4건)
@@ -41,11 +41,11 @@ Primary Focus: Crawler 실데이터 확장 + Web 품질 고도화 + 운영 안�
   - 공식 사이트 데이터 파싱(팀/경기/핵심 스탯) 구현
   - 파싱 실패 케이스 로깅 및 재시도 전략 정의
 
-2. `BATCH-003` 실패 재시도/알림 설계 및 구현
-- 목적: 배치 실패에 대한 운영 가시성 확보
+2. Premier League 공식 사이트 파서 안정화
+- 목적: 실제 운영 데이터 품질 확보
 - DoD:
-  - 재시도 정책(횟수/간격) 정의
-  - 실패 알림 채널(Slack 또는 이메일) 1개 이상 연동
+  - 공식 사이트 DOM 변화 대응 파서 보강
+  - 파싱 실패 시 fallback/skip 정책 구체화
 
 ### P1
 1. Web E2E/핵심 사용자 플로우 테스트 추가
@@ -65,7 +65,7 @@ Primary Focus: Crawler 실데이터 확장 + Web 품질 고도화 + 운영 안�
   - 업그레이드/대체 패키지 계획 수립
 
 ## C) In Progress
-- `P0-1`: Premier League 공식 사이트 기반 데이터소스(`pl`) POC 구현 진행중
+- `P0-1`: Premier League 공식 사이트 기반 데이터소스(`pl`) 안정화 작업 진행중
 
 ## D) Done Log
 - 2026-02-13
@@ -77,6 +77,7 @@ Primary Focus: Crawler 실데이터 확장 + Web 품질 고도화 + 운영 안�
   - `CRAWL-001` 초기 수집 파이프라인 구현 및 멱등 실행 확인
   - `BATCH-001`, `BATCH-002` 수동 runner 스켈레톤 상태 문서 반영
   - `BATCH-001`, `BATCH-002` GitHub Actions 스케줄러 연동 완료 (`Batch Scheduler`)
+  - `BATCH-003` 재시도 정책 + Slack Webhook 실패 알림 연동 완료
 
 ## E) Working Rules
 1. 개발 시작 전

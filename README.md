@@ -72,6 +72,7 @@ CI 필수 체크 설정 가이드는 `docs/ci-required-checks.md`를 참고하�
 - `CRAWL-001` 초기 수집 파이프라인(샘플 소스+업서트) 구현
 - `CRAWL-002` 공식 사이트(`premierleague.com`) 기반 `pl` 데이터소스 POC 진행중
 - `BATCH-001`, `BATCH-002` 스케줄러 연동 완료 (`Batch Scheduler`)
+- `BATCH-003` 재시도 정책 + Slack 실패 알림 연동 완료
 
 ## Contribution Rules
 - 브랜치: `feat/<scope>-<short-desc>`, `fix/<scope>-<short-desc>`

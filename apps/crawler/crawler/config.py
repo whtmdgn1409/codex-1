@@ -28,6 +28,18 @@ class SourceConfig:
     retry_backoff_seconds: float
 
 
+@dataclass
+class BatchPolicyConfig:
+    retry_count: int
+    retry_backoff_seconds: float
+
+
+@dataclass
+class AlertConfig:
+    slack_webhook_url: str | None
+    timeout_seconds: int
+
+
 def load_db_config() -> DbConfig:
     db_url = os.getenv("DB_URL", "sqlite:///./apps/crawler/dev_crawler.db")
     parsed = urlparse(db_url)
@@ -78,4 +90,22 @@ def load_source_config() -> SourceConfig:
         timeout_seconds=int(os.getenv("PL_HTTP_TIMEOUT_SECONDS", "20")),
         retry_count=int(os.getenv("PL_HTTP_RETRY_COUNT", "3")),
         retry_backoff_seconds=float(os.getenv("PL_HTTP_RETRY_BACKOFF_SECONDS", "1.0")),
+    )
+
+
+def load_batch_policy_config() -> BatchPolicyConfig:
+    retry_count = int(os.getenv("BATCH_RETRY_COUNT", "1"))
+    if retry_count < 1:
+        retry_count = 1
+    return BatchPolicyConfig(
+        retry_count=retry_count,
+        retry_backoff_seconds=float(os.getenv("BATCH_RETRY_BACKOFF_SECONDS", "1.0")),
+    )
+
+
+def load_alert_config() -> AlertConfig:
+    webhook = os.getenv("BATCH_ALERT_SLACK_WEBHOOK")
+    return AlertConfig(
+        slack_webhook_url=webhook.strip() if webhook and webhook.strip() else None,
+        timeout_seconds=int(os.getenv("BATCH_ALERT_TIMEOUT_SECONDS", "10")),
     )
