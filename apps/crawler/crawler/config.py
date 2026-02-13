@@ -27,6 +27,10 @@ class SourceConfig:
     retry_count: int
     retry_backoff_seconds: float
     parse_strict: bool
+    dataset_policy_teams: str
+    dataset_policy_players: str
+    dataset_policy_matches: str
+    dataset_policy_match_stats: str
 
 
 @dataclass
@@ -93,6 +97,10 @@ def load_source_config() -> SourceConfig:
         retry_count=int(os.getenv("PL_HTTP_RETRY_COUNT", "3")),
         retry_backoff_seconds=float(os.getenv("PL_HTTP_RETRY_BACKOFF_SECONDS", "1.0")),
         parse_strict=parse_strict_raw in {"1", "true", "yes", "on"},
+        dataset_policy_teams=os.getenv("PL_POLICY_TEAMS", "abort").strip().lower(),
+        dataset_policy_players=os.getenv("PL_POLICY_PLAYERS", "skip").strip().lower(),
+        dataset_policy_matches=os.getenv("PL_POLICY_MATCHES", "abort").strip().lower(),
+        dataset_policy_match_stats=os.getenv("PL_POLICY_MATCH_STATS", "skip").strip().lower(),
     )
 
 

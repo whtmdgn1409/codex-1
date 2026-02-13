@@ -47,6 +47,10 @@ PL_HTTP_RETRY_COUNT=3
 PL_HTTP_RETRY_BACKOFF_SECONDS=1.0
 PL_HTTP_TIMEOUT_SECONDS=20
 PL_PARSE_STRICT=0
+PL_POLICY_TEAMS=abort
+PL_POLICY_PLAYERS=skip
+PL_POLICY_MATCHES=abort
+PL_POLICY_MATCH_STATS=skip
 BATCH_RETRY_COUNT=3
 BATCH_RETRY_BACKOFF_SECONDS=2
 # 선택: Slack incoming webhook
@@ -56,6 +60,12 @@ BATCH_RETRY_BACKOFF_SECONDS=2
 파서 실패 정책:
 - `PL_PARSE_STRICT=0` (기본): 헤더 불일치 시 로그 남기고 해당 데이터셋 스킵
 - `PL_PARSE_STRICT=1`: 헤더 불일치 시 예외 발생(배치 실패 처리)
+- 데이터셋별 fallback 정책:
+  - `PL_POLICY_TEAMS`: `abort|skip` (기본 `abort`)
+  - `PL_POLICY_PLAYERS`: `abort|skip` (기본 `skip`)
+  - `PL_POLICY_MATCHES`: `abort|skip` (기본 `abort`)
+  - `PL_POLICY_MATCH_STATS`: `abort|skip` (기본 `skip`)
+  - 동작: table 파싱 실패 -> JSON fallback 시도 -> 최종 실패 시 dataset 정책 적용
 
 예시 (로컬 sqlite):
 ```bash

@@ -14,10 +14,17 @@
   - 백오프: `PL_HTTP_RETRY_BACKOFF_SECONDS`
   - 타임아웃: `PL_HTTP_TIMEOUT_SECONDS`
 - 파싱:
-  - HTML table 기반 1차 파서(POC)
+  - 다중 파싱 전략:
+    - 1차: HTML table 파싱(헤더 alias 매핑)
+    - 2차: Script JSON(`application/json`, `__NEXT_DATA__`, `__PRELOADED_STATE__`) fallback
   - 필드 매핑 실패 시 정책 분기:
-    - `PL_PARSE_STRICT=0` -> 빈 리스트 반환 + 경고 로그
-    - `PL_PARSE_STRICT=1` -> 예외 발생 + 배치 실패 처리
+    - `PL_PARSE_STRICT=0` -> 다음 전략으로 진행
+    - `PL_PARSE_STRICT=1` -> 즉시 예외
+  - 최종 실패 시 데이터셋 정책 분기:
+    - `PL_POLICY_TEAMS=abort|skip` (기본 `abort`)
+    - `PL_POLICY_PLAYERS=abort|skip` (기본 `skip`)
+    - `PL_POLICY_MATCHES=abort|skip` (기본 `abort`)
+    - `PL_POLICY_MATCH_STATS=abort|skip` (기본 `skip`)
 
 ## Field Mapping (Crawler Payload)
 - `teams`: `name`, `short_name`, `logo_url`, `stadium`, `manager`
@@ -39,3 +46,8 @@
 ## Risks
 - 공식 사이트 구조가 JS 중심이라 정적 HTML table 의존 파서는 깨질 수 있다.
 - 약관/라이선스 제한 검토가 선행되어야 운영 사용 가능하다.
+
+## Current Decision
+- 운영 안정성 기준:
+  - 핵심 데이터셋(`teams`, `matches`)은 `abort`
+  - 부가 데이터셋(`players`, `match_stats`)은 `skip`

@@ -53,6 +53,7 @@ API 이후 실행 계획은 `docs/next-development-plan.md`를 따릅니다.
 실행 기준 문서는 `NEXT_STEPS.md`를 따릅니다.
 CI 필수 체크 설정 가이드는 `docs/ci-required-checks.md`를 참고하세요.
 공식 사이트 크롤링 POC 스펙은 `docs/premierleague-crawling-poc.md`를 참고하세요.
+운영 설정/시크릿 가이드는 `docs/operations-config.md`를 참고하세요.
 
 ## NEXT_STEPS 운영 규칙
 - 개발 시작 전: `NEXT_STEPS.md` 확인 (Primary Focus + P0/P1 우선순위)

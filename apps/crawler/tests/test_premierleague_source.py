@@ -17,6 +17,10 @@ def _source_config() -> SourceConfig:
         retry_count=3,
         retry_backoff_seconds=0.0,
         parse_strict=False,
+        dataset_policy_teams="skip",
+        dataset_policy_players="skip",
+        dataset_policy_matches="skip",
+        dataset_policy_match_stats="skip",
     )
 
 
@@ -127,6 +131,47 @@ def test_premierleague_parse_strict_raises_on_missing_headers(monkeypatch: pytes
     """
     config = _source_config()
     config.parse_strict = True
+    source = PremierLeagueDataSource(config)
+    monkeypatch.setattr(source, "_http_get", lambda _: html)
+
+    with pytest.raises(ValueError):
+        source.load_teams()
+
+
+def test_premierleague_json_fallback_for_matches(monkeypatch: pytest.MonkeyPatch) -> None:
+    html = """
+    <html><body>
+      <script type="application/json">
+        {
+          "items": [
+            {
+              "matchweek": 2,
+              "date": "2025-08-18 20:00:00",
+              "home": "ARS",
+              "away": "LIV",
+              "home_goals": 1,
+              "away_goals": 1,
+              "state": "FINISHED"
+            }
+          ]
+        }
+      </script>
+    </body></html>
+    """
+    source = PremierLeagueDataSource(_source_config())
+    monkeypatch.setattr(source, "_http_get", lambda _: html)
+
+    matches = source.load_matches()
+    assert len(matches) == 1
+    assert matches[0]["round"] == 2
+    assert matches[0]["home_team_short_name"] == "ARS"
+    assert matches[0]["away_score"] == 1
+
+
+def test_dataset_policy_abort_raises_when_no_records(monkeypatch: pytest.MonkeyPatch) -> None:
+    html = "<html><body><div>no table, no json</div></body></html>"
+    config = _source_config()
+    config.dataset_policy_teams = "abort"
     source = PremierLeagueDataSource(config)
     monkeypatch.setattr(source, "_http_get", lambda _: html)
 

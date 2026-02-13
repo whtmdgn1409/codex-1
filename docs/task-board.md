@@ -16,7 +16,7 @@ DoD
 - [x] `DB-001` MySQL 스키마 마이그레이션 작성 (`teams`, `players`, `matches`, `match_stats`, `standings`)
 - [x] `DB-002` 인덱스/제약조건/업서트 전략 확정
 - [x] `CRAWL-001` 팀/선수/일정 초기 수집 파이프라인
-- [ ] `CRAWL-002` Premier League 공식 사이트 기반 수집기 POC
+- [ ] `CRAWL-002` Premier League 공식 사이트 기반 수집기 POC (진행중: table alias + JSON fallback + dataset 정책)
 
 DoD
 - [ ] 20개 팀/선수/일정 데이터 1회 적재 완료

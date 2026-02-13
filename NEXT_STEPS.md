@@ -27,6 +27,7 @@ Primary Focus: Crawler 실데이터 확장 + Web 품질 고도화 + 운영 안�
 - 완료: `BATCH-001` 일배치 스케줄러 연동 (`make crawler-daily`, 매일 09:00 KST)
 - 완료: `BATCH-002` 주배치 스케줄러 연동 (`make crawler-weekly`, 매주 목 12:00 KST)
 - 완료: `BATCH-003` 실패 재시도/Slack 알림 연동 (`BATCH_RETRY_*`, `BATCH_ALERT_SLACK_WEBHOOK`)
+- 진행중: `CRAWL-002` 공식 사이트 파서 고도화 (table alias + JSON fallback + dataset 정책)
 
 ### Known Issues / Risks
 - `apps/web` 의존성에서 보안 취약점 경고 존재 (`npm audit` 기준 4건)
@@ -66,6 +67,8 @@ Primary Focus: Crawler 실데이터 확장 + Web 품질 고도화 + 운영 안�
 
 ## C) In Progress
 - `P0-1`: Premier League 공식 사이트 기반 데이터소스(`pl`) 안정화 작업 진행중
+  - table/header alias + JSON fallback 구현
+  - dataset별 skip/abort 정책 운영값 정리
 
 ## D) Done Log
 - 2026-02-13
@@ -78,6 +81,7 @@ Primary Focus: Crawler 실데이터 확장 + Web 품질 고도화 + 운영 안�
   - `BATCH-001`, `BATCH-002` 수동 runner 스켈레톤 상태 문서 반영
   - `BATCH-001`, `BATCH-002` GitHub Actions 스케줄러 연동 완료 (`Batch Scheduler`)
   - `BATCH-003` 재시도 정책 + Slack Webhook 실패 알림 연동 완료
+  - `CRAWL-002` 1차 안정화: 다중 파싱 전략(table -> JSON fallback) 및 dataset fallback 정책 도입
 
 ## E) Working Rules
 1. 개발 시작 전
