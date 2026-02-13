@@ -1,4 +1,4 @@
-.PHONY: setup lint test test-unit test-openapi test-integration dev
+.PHONY: setup lint test test-unit test-openapi test-integration dev web-setup web-dev web-build web-lint
 
 setup:
 	python3 -m pip install -r apps/api/requirements.txt
@@ -22,3 +22,15 @@ test-integration:
 
 dev:
 	PYTHONPATH=apps/api python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+web-setup:
+	cd apps/web && npm install
+
+web-dev:
+	cd apps/web && npm run dev
+
+web-build:
+	cd apps/web && npm run build
+
+web-lint:
+	cd apps/web && npm run lint

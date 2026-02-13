@@ -16,13 +16,15 @@ AGENTS.md    # 서비스/DB/화면/배치 요구사항
 ```
 
 ## Quick Start
-현재 API MVP 일부(`GET /matches`)가 구현되어 있습니다.
+현재 API MVP와 Web 초기 화면이 구현되어 있습니다.
 
 ```bash
 make setup   # API 의존성 설치
 make lint    # API lint (ruff)
 make test    # API 테스트 (pytest)
 make dev     # API 서버 실행 (uvicorn, :8000)
+make web-setup  # Web 의존성 설치 (npm)
+make web-dev    # Web 개발 서버 실행 (Next.js, :3000)
 ```
 
 ## MVP Scope
@@ -36,7 +38,13 @@ make dev     # API 서버 실행 (uvicorn, :8000)
 ## Delivery Plan
 상세 일정과 이슈 단위 작업은 `docs/task-board.md`를 따릅니다.
 API 이후 실행 계획은 `docs/next-development-plan.md`를 따릅니다.
+실행 기준 문서는 `NEXT_STEPS.md`를 따릅니다.
 CI 필수 체크 설정 가이드는 `docs/ci-required-checks.md`를 참고하세요.
+
+## NEXT_STEPS 운영 규칙
+- 개발 시작 전: `NEXT_STEPS.md` 확인 (Primary Focus + P0/P1 우선순위)
+- 개발 완료 후: `NEXT_STEPS.md` 업데이트 (Current Status, Next Priorities, Done Log)
+- PR 작성 시: `NEXT_STEPS.md` 반영 여부를 명시
 
 ## Current Progress
 - `OPS-001`, `OPS-002`, `OPS-003` 완료
@@ -46,6 +54,8 @@ CI 필수 체크 설정 가이드는 `docs/ci-required-checks.md`를 참고하�
 - `API-003` 완료 (`GET /standings`)
 - `API-004` 완료 (`GET /stats/top`)
 - `API-005` 완료 (`GET /teams`, `GET /teams/{id}`)
+- `WEB-001`~`WEB-004` 1차 화면/연동 구현 (`apps/web`)
+- `WEB-005` 모바일 390px 대응 CSS 반영
 
 ## Contribution Rules
 - 브랜치: `feat/<scope>-<short-desc>`, `fix/<scope>-<short-desc>`

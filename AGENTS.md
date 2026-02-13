@@ -147,3 +147,17 @@
 * **매주 목요일 12:00 PM:**
   * 다가오는 주말 라운드의 **경기 일정 및 변경 사항** 확인 및 업데이트
 * **크롤링 타겟:** FBref.com 데이터 테이블 (Pandas `read_html` 활용 권장) 및 공식 홈페이지 스쿼드 리스트.
+---
+
+## 4. Development Workflow Rule (`NEXT_STEPS.md`)
+
+본 저장소는 `NEXT_STEPS.md`를 개발 기준 문서(Source of Truth)로 사용합니다.
+
+- 개발 시작 전 필수:
+  - `NEXT_STEPS.md`를 읽고 현재 우선순위(`Primary Focus`, `P0/P1`)를 확인한다.
+- 개발 완료 후 필수:
+  - `NEXT_STEPS.md`를 업데이트한다.
+  - 최소 업데이트 범위: `Current Status`, `Next Priorities`, `Done Log`.
+- PR 규칙:
+  - PR 설명에 `NEXT_STEPS.md 반영 여부`를 명시한다.
+  - 반영이 필요한 변경에서 문서 업데이트가 누락되면 머지하지 않는다.
