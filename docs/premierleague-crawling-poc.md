@@ -13,6 +13,7 @@
   - 재시도: `PL_HTTP_RETRY_COUNT`
   - 백오프: `PL_HTTP_RETRY_BACKOFF_SECONDS`
   - 타임아웃: `PL_HTTP_TIMEOUT_SECONDS`
+  - 권장 기본값: `PL_PLAYERS_URL=https://www.premierleague.com/stats/top/players/goal`
 - 파싱:
   - 다중 파싱 전략:
     - 1차: HTML table 파싱(헤더 alias 매핑)

@@ -243,7 +243,13 @@ class PremierLeagueDataSource(DataSource):
         self.config = config
 
     def load_teams(self) -> list[TeamPayload]:
-        html = self._fetch_with_retry(self.config.teams_url, "pl.fetch.teams")
+        html = self._fetch_html_for_dataset("teams", self.config.teams_url, "pl.fetch.teams")
+        if html is None:
+            if self.config.teams_seed_fallback:
+                seed_payload = load_seed_teams()
+                log_event("WARNING", "pl.parse.teams_seed_fallback", rows=len(seed_payload))
+                return seed_payload
+            return []
         records = self._extract_from_table(html=html, aliases=TEAM_ALIASES, required=["name"])
         if records:
             log_event("INFO", "pl.parse.strategy", dataset="teams", strategy="table", rows=len(records))
@@ -335,7 +341,9 @@ class PremierLeagueDataSource(DataSource):
         return ""
 
     def load_players(self) -> list[PlayerPayload]:
-        html = self._fetch_with_retry(self.config.players_url, "pl.fetch.players")
+        html = self._fetch_html_for_dataset("players", self.config.players_url, "pl.fetch.players")
+        if html is None:
+            return []
         records = self._extract_records(
             dataset="players",
             html=html,
@@ -359,7 +367,9 @@ class PremierLeagueDataSource(DataSource):
         return payload
 
     def load_matches(self) -> list[MatchPayload]:
-        html = self._fetch_with_retry(self.config.matches_url, "pl.fetch.matches")
+        html = self._fetch_html_for_dataset("matches", self.config.matches_url, "pl.fetch.matches")
+        if html is None:
+            return []
         records = self._extract_records(
             dataset="matches",
             html=html,
@@ -383,7 +393,9 @@ class PremierLeagueDataSource(DataSource):
         return payload
 
     def load_match_stats(self) -> list[MatchStatPayload]:
-        html = self._fetch_with_retry(self.config.match_stats_url, "pl.fetch.match_stats")
+        html = self._fetch_html_for_dataset("match_stats", self.config.match_stats_url, "pl.fetch.match_stats")
+        if html is None:
+            return []
         records = self._extract_records(
             dataset="match_stats",
             html=html,
@@ -432,6 +444,14 @@ class PremierLeagueDataSource(DataSource):
                     time.sleep(self.config.retry_backoff_seconds * attempt)
         assert last_error is not None
         raise last_error
+
+    def _fetch_html_for_dataset(self, dataset: Dataset, url: str, event_name: str) -> str | None:
+        try:
+            return self._fetch_with_retry(url, event_name)
+        except Exception as exc:
+            reason = f"fetch_failed:{type(exc).__name__}"
+            self._handle_dataset_issue(dataset, reason=reason)
+            return None
 
     def _http_get(self, url: str) -> str:
         request = Request(url, headers={"User-Agent": "EPL-Information-Hub-Crawler/1.0"})

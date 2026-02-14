@@ -42,7 +42,7 @@ make crawler-weekly  # BATCH-002 주배치(수동)
 CRAWLER_DATA_SOURCE=pl
 PL_TEAMS_URL=https://www.premierleague.com/en/clubs
 PL_MATCHES_URL=https://www.premierleague.com/en/matches
-PL_PLAYERS_URL=https://www.premierleague.com/stats/top/players/goals
+PL_PLAYERS_URL=https://www.premierleague.com/stats/top/players/goal
 PL_MATCH_STATS_URL=https://www.premierleague.com/stats
 PL_HTTP_RETRY_COUNT=3
 PL_HTTP_RETRY_BACKOFF_SECONDS=1.0

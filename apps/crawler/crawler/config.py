@@ -96,7 +96,7 @@ def load_source_config() -> SourceConfig:
     return SourceConfig(
         source=os.getenv("CRAWLER_DATA_SOURCE", "sample").strip().lower(),
         teams_url=os.getenv("PL_TEAMS_URL", "https://www.premierleague.com/en/clubs"),
-        players_url=os.getenv("PL_PLAYERS_URL", "https://www.premierleague.com/stats/top/players/goals"),
+        players_url=os.getenv("PL_PLAYERS_URL", "https://www.premierleague.com/stats/top/players/goal"),
         matches_url=os.getenv("PL_MATCHES_URL", "https://www.premierleague.com/en/matches"),
         match_stats_url=os.getenv("PL_MATCH_STATS_URL", "https://www.premierleague.com/stats"),
         timeout_seconds=int(os.getenv("PL_HTTP_TIMEOUT_SECONDS", "20")),

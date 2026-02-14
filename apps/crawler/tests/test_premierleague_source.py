@@ -169,6 +169,34 @@ def test_teams_seed_fallback_disabled_honors_abort_policy(monkeypatch: pytest.Mo
         source.load_teams()
 
 
+def test_players_fetch_failure_respects_skip_policy(monkeypatch: pytest.MonkeyPatch) -> None:
+    config = _source_config()
+    config.dataset_policy_players = "skip"
+    source = PremierLeagueDataSource(config)
+
+    def failing_fetch(url: str) -> str:
+        if "players" in url:
+            raise RuntimeError("players fetch failed")
+        return _fixture_html("teams_official.html")
+
+    monkeypatch.setattr(source, "_http_get", failing_fetch)
+    players = source.load_players()
+    assert players == []
+
+
+def test_matches_fetch_failure_honors_abort_policy(monkeypatch: pytest.MonkeyPatch) -> None:
+    config = _source_config()
+    config.dataset_policy_matches = "abort"
+    source = PremierLeagueDataSource(config)
+    def failing_fetch(_: str) -> str:
+        raise RuntimeError("matches fetch failed")
+
+    monkeypatch.setattr(source, "_http_get", failing_fetch)
+
+    with pytest.raises(ValueError):
+        source.load_matches()
+
+
 def test_premierleague_fetch_retry(monkeypatch: pytest.MonkeyPatch) -> None:
     attempts = {"count": 0}
     html = _fixture_html("teams_official.html")
