@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+import ssl
 import time
 from dataclasses import dataclass
 from html.parser import HTMLParser
@@ -92,6 +93,19 @@ def _safe_float(value: str) -> float | None:
         return float(normalized)
     except Exception:
         return None
+
+
+def _derive_short_name(team_name: str) -> str:
+    cleaned = re.sub(r"[^A-Za-z0-9\s]", " ", team_name).strip()
+    if not cleaned:
+        return "UNK"
+    parts = [part for part in cleaned.split() if part]
+    if len(parts) >= 2:
+        initials = "".join(part[0] for part in parts[:3]).upper()
+        if len(initials) >= 2:
+            return initials[:3]
+    compact = "".join(parts)
+    return compact[:3].upper() if compact else "UNK"
 
 
 @dataclass
@@ -203,17 +217,19 @@ class PremierLeagueDataSource(DataSource):
             dataset="teams",
             html=html,
             aliases=TEAM_ALIASES,
-            required=["name", "short_name", "stadium", "manager"],
+            required=["name"],
         )
         payload: list[TeamPayload] = []
         for row in records:
+            name = row["name"].strip()
+            short_name = row.get("short_name", "").strip() or _derive_short_name(name)
             payload.append(
                 {
-                    "name": row["name"],
-                    "short_name": row["short_name"],
+                    "name": name,
+                    "short_name": short_name,
                     "logo_url": row.get("logo_url", ""),
-                    "stadium": row["stadium"],
-                    "manager": row["manager"],
+                    "stadium": row.get("stadium", ""),
+                    "manager": row.get("manager", ""),
                 }
             )
         log_event("INFO", "pl.parse.teams", rows=len(payload))
@@ -320,7 +336,13 @@ class PremierLeagueDataSource(DataSource):
 
     def _http_get(self, url: str) -> str:
         request = Request(url, headers={"User-Agent": "EPL-Information-Hub-Crawler/1.0"})
-        with urlopen(request, timeout=self.config.timeout_seconds) as response:
+        if self.config.verify_ssl:
+            context = ssl.create_default_context(cafile=self.config.ca_file)
+        else:
+            context = ssl._create_unverified_context()
+            log_event("WARNING", "pl.http.ssl_verify_disabled", url=url)
+
+        with urlopen(request, timeout=self.config.timeout_seconds, context=context) as response:
             return response.read().decode("utf-8", errors="replace")
 
     def _extract_records(
@@ -410,13 +432,23 @@ class PremierLeagueDataSource(DataSource):
                 values.append(obj)
 
         for block in parser.script_blocks:
-            for variable in ("__NEXT_DATA__", "__PRELOADED_STATE__", "__INITIAL_STATE__"):
+            for variable in (
+                "__NEXT_DATA__",
+                "__PRELOADED_STATE__",
+                "__INITIAL_STATE__",
+                "window.__NEXT_DATA__",
+                "window.PULSE.envPaths",
+                "PULSE.envPaths",
+                "window.PULSE.app",
+                "PULSE.app",
+            ):
                 raw = self._extract_assigned_json(block, variable)
                 if raw is None:
                     continue
                 obj = self._json_load(raw)
                 if obj is not None:
                     values.append(obj)
+            values.extend(self._extract_inline_json_objects(block))
         return values
 
     def _extract_assigned_json(self, script_block: str, variable: str) -> str | None:
@@ -426,15 +458,40 @@ class PremierLeagueDataSource(DataSource):
         eq_index = script_block.find("=", marker_index)
         if eq_index < 0:
             return None
-        start = script_block.find("{", eq_index)
-        if start < 0:
+        start = eq_index + 1
+        while start < len(script_block) and script_block[start].isspace():
+            start += 1
+        if start >= len(script_block) or script_block[start] not in "{[":
             return None
+        return self._extract_balanced(script_block, start)
 
-        depth = 0
+    def _extract_inline_json_objects(self, script_block: str) -> list[object]:
+        values: list[object] = []
+        for opening in ("{", "["):
+            start = 0
+            while start < len(script_block):
+                idx = script_block.find(opening, start)
+                if idx < 0:
+                    break
+                raw = self._extract_balanced(script_block, idx)
+                if raw is None:
+                    start = idx + 1
+                    continue
+                parsed = self._json_load(raw)
+                if parsed is not None:
+                    values.append(parsed)
+                start = idx + 1
+        return values
+
+    def _extract_balanced(self, text: str, start: int) -> str | None:
+        opening = text[start]
+        closing = "}" if opening == "{" else "]"
+        stack = [closing]
+
         in_string = False
         escaped = False
-        for idx in range(start, len(script_block)):
-            char = script_block[idx]
+        for idx in range(start + 1, len(text)):
+            char = text[idx]
             if escaped:
                 escaped = False
                 continue
@@ -447,12 +504,15 @@ class PremierLeagueDataSource(DataSource):
             if in_string:
                 continue
             if char == "{":
-                depth += 1
+                stack.append("}")
                 continue
-            if char == "}":
-                depth -= 1
-                if depth == 0:
-                    return script_block[start : idx + 1]
+            if char == "[":
+                stack.append("]")
+                continue
+            if char == stack[-1]:
+                stack.pop()
+                if not stack:
+                    return text[start : idx + 1]
         return None
 
     def _json_load(self, raw: str) -> object | None:
