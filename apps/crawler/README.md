@@ -56,6 +56,7 @@ PL_POLICY_PLAYERS=skip
 PL_POLICY_MATCHES=abort
 PL_POLICY_MATCH_STATS=skip
 PL_TEAMS_SEED_FALLBACK=1
+PL_MATCHES_SEED_FALLBACK=1
 BATCH_RETRY_COUNT=3
 BATCH_RETRY_BACKOFF_SECONDS=2
 # 선택: Slack incoming webhook
@@ -72,6 +73,7 @@ BATCH_RETRY_BACKOFF_SECONDS=2
   - `PL_POLICY_MATCH_STATS`: `abort|skip` (기본 `skip`)
   - 동작: table 파싱 실패 -> JSON fallback 시도 -> 최종 실패 시 dataset 정책 적용
   - 단, `teams`는 `PL_TEAMS_SEED_FALLBACK=1`일 때 공식 파싱 실패 시 seed(20개)로 대체
+  - `matches`도 `PL_MATCHES_SEED_FALLBACK=1`일 때 공식 파싱/수집 실패 시 seed fixture로 대체
 
 TLS/SSL 설정:
 - `PL_HTTP_VERIFY_SSL=1` (기본): SSL 인증서 검증 수행

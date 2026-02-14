@@ -29,6 +29,9 @@
   - Teams seed fallback:
     - `PL_TEAMS_SEED_FALLBACK=1` (기본): teams 파싱 실패 시 seed 팀 목록으로 대체
     - `PL_TEAMS_SEED_FALLBACK=0`: seed fallback 비활성화(정책값 그대로 abort/skip 적용)
+  - Matches seed fallback:
+    - `PL_MATCHES_SEED_FALLBACK=1` (기본): matches fetch/파싱 실패 시 seed 경기 목록으로 대체
+    - `PL_MATCHES_SEED_FALLBACK=0`: seed fallback 비활성화(정책값 그대로 abort/skip 적용)
 
 ## Field Mapping (Crawler Payload)
 - `teams`: `name`, `short_name`, `logo_url`, `stadium`, `manager`

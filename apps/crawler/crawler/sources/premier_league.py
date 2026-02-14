@@ -11,6 +11,7 @@ from urllib.request import Request, urlopen
 from crawler.config import SourceConfig
 from crawler.logging_utils import log_event
 from crawler.sources.base import DataSource
+from crawler.sources.matches_seed import load_seed_matches
 from crawler.sources.teams_seed import load_seed_teams
 from crawler.sources.types import MatchPayload, MatchStatPayload, PlayerPayload, TeamPayload
 
@@ -367,15 +368,30 @@ class PremierLeagueDataSource(DataSource):
         return payload
 
     def load_matches(self) -> list[MatchPayload]:
-        html = self._fetch_html_for_dataset("matches", self.config.matches_url, "pl.fetch.matches")
-        if html is None:
+        try:
+            html = self._fetch_with_retry(self.config.matches_url, "pl.fetch.matches")
+        except Exception as exc:
+            if self.config.matches_seed_fallback:
+                seed_payload = load_seed_matches()
+                log_event("WARNING", "pl.parse.matches_seed_fallback", rows=len(seed_payload), reason=type(exc).__name__)
+                return seed_payload
+            self._handle_dataset_issue("matches", reason=f"fetch_failed:{type(exc).__name__}")
             return []
-        records = self._extract_records(
-            dataset="matches",
-            html=html,
-            aliases=MATCH_ALIASES,
-            required=["round", "match_date", "home_team_short_name", "away_team_short_name", "status"],
-        )
+
+        records = self._extract_from_table(html=html, aliases=MATCH_ALIASES, required=["round", "match_date", "home_team_short_name", "away_team_short_name", "status"])
+        if records:
+            log_event("INFO", "pl.parse.strategy", dataset="matches", strategy="table", rows=len(records))
+        if not records:
+            records = self._extract_from_json(html=html, aliases=MATCH_ALIASES, required=["round", "match_date", "home_team_short_name", "away_team_short_name", "status"])
+            if records:
+                log_event("INFO", "pl.parse.strategy", dataset="matches", strategy="json", rows=len(records))
+        if not records and self.config.matches_seed_fallback:
+            seed_payload = load_seed_matches()
+            log_event("WARNING", "pl.parse.matches_seed_fallback", rows=len(seed_payload), reason="no_records_after_all_strategies")
+            return seed_payload
+        if not records:
+            records = self._handle_dataset_issue("matches", reason="no_records_after_all_strategies")
+
         payload: list[MatchPayload] = []
         for row in records:
             payload.append(

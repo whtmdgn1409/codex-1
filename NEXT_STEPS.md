@@ -105,10 +105,13 @@ Primary Focus: CRAWL-002 완료 전환 + 운영 가드레일 고정 + Web 성능
   - dataset별 skip/abort 정책 운영값 정리
 - `P0-1a`: 실사이트 DNS 접근 오류 해결 및 live validate 재실행 진행중
 - `P0-1b`: CI runner live validate 실패 원인(teams 0건) 대응 파서/소스 전략 고도화 진행중
+- `P0-1c`: matches dataset live 파싱 실패 대응(seed fallback + parse 전략 확장) 진행중
 - `P1-2`: Web 성능 개선 `WEB-Q-001` 적용 진행중 (매치 상세 탭 lazy render + dynamic import)
 
 ## D) Done Log
 - 2026-02-14
+  - `CRAWL-002` matches 운영 완화 적용: 공식 fetch/파싱 실패 시 seed fallback(`PL_MATCHES_SEED_FALLBACK=1` default)
+  - `CRAWL-002` matches fallback 회귀 테스트/validate 보강 완료 (`crawler-test` 27 passed)
   - `CRAWL-002` teams 운영 완화 적용: 공식 파싱 실패 시 seed(20개) fallback(`PL_TEAMS_SEED_FALLBACK=1` default)
   - `CRAWL-002` seed fallback 회귀 테스트 추가 및 validate 로컬 검증(`teams=20, matches=1`) 확인
   - `CRAWL-002` fetch-failure 정책 보강: `players/match_stats`는 fetch 오류 시 `skip` 정책 적용

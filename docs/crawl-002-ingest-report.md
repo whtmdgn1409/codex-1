@@ -99,7 +99,7 @@ Validation checks:
 - `[high] CI live validate parse failure moved to matches dataset`: teams seed fallback 적용 후 `https://www.premierleague.com/en/matches`에서 `matches` 0건으로 `no_records_after_all_strategies` 발생
 - Repro command: `.github/workflows/crawler-live-validate.yml`의 `Run live ingest validation (CRAWL-002)` step
 - Logs/Evidence: `gh run view 22008081423 --repo whtmdgn1409/codex-1 --log-failed`
-- Temporary mitigation: matches 파서 strategy 확장(링크/inline payload) 또는 검증용 대체 source URL 도입 검토
+- Temporary mitigation: `PL_MATCHES_SEED_FALLBACK=1`(default)로 fetch/parse 실패 시 seed 경기 목록으로 대체
 - `[high] live-source network DNS failure`: 실사이트(`https://www.premierleague.com/en/clubs`) 접근 시 `gaierror: nodename nor servname provided`로 fetch 실패
 - Repro command: 문서 3)의 live validate 명령
 - Logs/Evidence: `docs/reports/crawl-002-validate-live-insecure.json`

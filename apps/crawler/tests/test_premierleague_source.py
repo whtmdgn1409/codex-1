@@ -31,6 +31,7 @@ def _source_config() -> SourceConfig:
         dataset_policy_matches="skip",
         dataset_policy_match_stats="skip",
         teams_seed_fallback=True,
+        matches_seed_fallback=True,
     )
 
 
@@ -129,7 +130,9 @@ def test_premierleague_json_fallback_for_match_stats_nested_fixture(monkeypatch:
 
 
 def test_dataset_policy_skip_returns_empty_when_no_records(monkeypatch: pytest.MonkeyPatch) -> None:
-    source = PremierLeagueDataSource(_source_config())
+    config = _source_config()
+    config.matches_seed_fallback = False
+    source = PremierLeagueDataSource(config)
     monkeypatch.setattr(source, "_http_get", lambda _: "<html><body><div>empty</div></body></html>")
 
     assert source.load_matches() == []
@@ -187,11 +190,35 @@ def test_players_fetch_failure_respects_skip_policy(monkeypatch: pytest.MonkeyPa
 def test_matches_fetch_failure_honors_abort_policy(monkeypatch: pytest.MonkeyPatch) -> None:
     config = _source_config()
     config.dataset_policy_matches = "abort"
+    config.matches_seed_fallback = False
     source = PremierLeagueDataSource(config)
     def failing_fetch(_: str) -> str:
         raise RuntimeError("matches fetch failed")
 
     monkeypatch.setattr(source, "_http_get", failing_fetch)
+
+    with pytest.raises(ValueError):
+        source.load_matches()
+
+
+def test_matches_seed_fallback_returns_seed_when_parse_fails(monkeypatch: pytest.MonkeyPatch) -> None:
+    config = _source_config()
+    config.dataset_policy_matches = "abort"
+    config.matches_seed_fallback = True
+    source = PremierLeagueDataSource(config)
+    monkeypatch.setattr(source, "_http_get", lambda _: "<html><body><div>empty</div></body></html>")
+
+    matches = source.load_matches()
+    assert len(matches) >= 1
+    assert matches[0]["home_team_short_name"] == "ARS"
+
+
+def test_matches_seed_fallback_disabled_honors_parse_abort(monkeypatch: pytest.MonkeyPatch) -> None:
+    config = _source_config()
+    config.dataset_policy_matches = "abort"
+    config.matches_seed_fallback = False
+    source = PremierLeagueDataSource(config)
+    monkeypatch.setattr(source, "_http_get", lambda _: "<html><body><div>empty</div></body></html>")
 
     with pytest.raises(ValueError):
         source.load_matches()
