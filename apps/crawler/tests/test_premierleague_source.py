@@ -21,6 +21,8 @@ def _source_config() -> SourceConfig:
         matches_url="https://example.com/matches",
         match_stats_url="https://example.com/match-stats",
         timeout_seconds=1,
+        verify_ssl=True,
+        ca_file=None,
         retry_count=3,
         retry_backoff_seconds=0.0,
         parse_strict=False,
@@ -64,6 +66,32 @@ def test_premierleague_parse_teams_aliases_from_official_fixture(monkeypatch: py
     assert teams[0]["short_name"] == "ARS"
     assert teams[0]["manager"] == "Mikel Arteta"
     assert teams[1]["stadium"] == "Anfield"
+
+
+def test_premierleague_parse_teams_from_pulse_assignment_fixture(monkeypatch: pytest.MonkeyPatch) -> None:
+    source = PremierLeagueDataSource(_source_config())
+    monkeypatch.setattr(source, "_http_get", lambda _: _fixture_html("teams_pulse_assignment.html"))
+
+    teams = source.load_teams()
+
+    assert len(teams) == 2
+    assert teams[0]["name"] == "Arsenal FC"
+    assert teams[0]["short_name"] == "ARS"
+    assert teams[0]["manager"] == "Mikel Arteta"
+    assert teams[1]["stadium"] == "Anfield"
+
+
+def test_premierleague_parse_teams_from_links_fallback_fixture(monkeypatch: pytest.MonkeyPatch) -> None:
+    source = PremierLeagueDataSource(_source_config())
+    monkeypatch.setattr(source, "_http_get", lambda _: _fixture_html("teams_links_fallback.html"))
+
+    teams = source.load_teams()
+
+    assert len(teams) == 3
+    assert teams[0]["name"] == "Arsenal"
+    assert teams[0]["short_name"] == "ARS"
+    assert teams[1]["name"] == "Liverpool"
+    assert teams[2]["name"] == "Manchester City"
 
 
 def test_premierleague_json_fallback_for_matches_from_next_data_fixture(monkeypatch: pytest.MonkeyPatch) -> None:

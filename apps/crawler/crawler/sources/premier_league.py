@@ -207,18 +207,56 @@ class _ScriptJsonParser(HTMLParser):
             self._script_data.append(data)
 
 
+class _AnchorParser(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__()
+        self._in_anchor = False
+        self._current_href = ""
+        self._current_text: list[str] = []
+        self.links: list[tuple[str, str]] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        if tag != "a":
+            return
+        attrs_dict = {k.lower(): (v or "") for k, v in attrs}
+        self._current_href = attrs_dict.get("href", "")
+        self._current_text = []
+        self._in_anchor = True
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag != "a" or not self._in_anchor:
+            return
+        text = " ".join("".join(self._current_text).split()).strip()
+        self.links.append((self._current_href, text))
+        self._in_anchor = False
+        self._current_href = ""
+        self._current_text = []
+
+    def handle_data(self, data: str) -> None:
+        if self._in_anchor:
+            self._current_text.append(data)
+
+
 class PremierLeagueDataSource(DataSource):
     def __init__(self, config: SourceConfig) -> None:
         self.config = config
 
     def load_teams(self) -> list[TeamPayload]:
         html = self._fetch_with_retry(self.config.teams_url, "pl.fetch.teams")
-        records = self._extract_records(
-            dataset="teams",
-            html=html,
-            aliases=TEAM_ALIASES,
-            required=["name"],
-        )
+        records = self._extract_from_table(html=html, aliases=TEAM_ALIASES, required=["name"])
+        if records:
+            log_event("INFO", "pl.parse.strategy", dataset="teams", strategy="table", rows=len(records))
+        if not records:
+            records = self._extract_from_json(html=html, aliases=TEAM_ALIASES, required=["name"])
+            if records:
+                log_event("INFO", "pl.parse.strategy", dataset="teams", strategy="json", rows=len(records))
+        if not records:
+            records = self._extract_teams_from_links(html)
+            if records:
+                log_event("INFO", "pl.parse.strategy", dataset="teams", strategy="links", rows=len(records))
+        if not records:
+            records = self._handle_dataset_issue("teams", reason="no_records_after_all_strategies")
+
         payload: list[TeamPayload] = []
         for row in records:
             name = row["name"].strip()
@@ -234,6 +272,62 @@ class PremierLeagueDataSource(DataSource):
             )
         log_event("INFO", "pl.parse.teams", rows=len(payload))
         return payload
+
+    def _extract_teams_from_links(self, html: str) -> list[dict[str, str]]:
+        parser = _AnchorParser()
+        parser.feed(html)
+        items: list[dict[str, str]] = []
+        seen_names: set[str] = set()
+
+        for href, text in parser.links:
+            href_lower = href.lower()
+            if "/clubs/" not in href_lower:
+                continue
+
+            team_name = text.strip()
+            if not team_name or team_name.lower() in {"clubs", "all clubs", "club"}:
+                team_name = self._name_from_club_href(href)
+            if not team_name:
+                continue
+
+            normalized_name = " ".join(team_name.split()).strip()
+            if not normalized_name:
+                continue
+            key = normalized_name.lower()
+            if key in seen_names:
+                continue
+            seen_names.add(key)
+
+            items.append(
+                {
+                    "name": normalized_name,
+                    "short_name": _derive_short_name(normalized_name),
+                    "logo_url": "",
+                    "stadium": "",
+                    "manager": "",
+                }
+            )
+        return items
+
+    def _name_from_club_href(self, href: str) -> str:
+        patterns = [
+            r"/clubs/\d+/([^/?#]+)/",
+            r"/clubs/\d+/([^/?#]+)$",
+            r"/clubs/([^/?#]+)/",
+            r"/clubs/([^/?#]+)$",
+        ]
+        for pattern in patterns:
+            matched = re.search(pattern, href, flags=re.IGNORECASE)
+            if not matched:
+                continue
+            slug = matched.group(1).strip("-_ ")
+            if not slug:
+                continue
+            words = [segment for segment in re.split(r"[-_]+", slug) if segment]
+            if not words:
+                continue
+            return " ".join(word.capitalize() for word in words)
+        return ""
 
     def load_players(self) -> list[PlayerPayload]:
         html = self._fetch_with_retry(self.config.players_url, "pl.fetch.players")
