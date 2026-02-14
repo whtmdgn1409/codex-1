@@ -92,13 +92,21 @@ Validation checks:
 ## 5) Issues & Follow-ups
 
 ### 5.1 Observed Issues
-- `[high] live-source SSL verification failure`: 실사이트(`https://www.premierleague.com/en/clubs`) 접근 시 `CERTIFICATE_VERIFY_FAILED`로 fetch 실패
+- `[high] CI live validate parse failure on teams dataset`: GitHub Actions runner에서 `https://www.premierleague.com/en/clubs` fetch는 성공하지만 `teams` 0건으로 `no_records_after_all_strategies` 발생
+- Repro command: `.github/workflows/crawler-live-validate.yml`의 `Run live ingest validation (CRAWL-002)` step
+- Logs/Evidence: `gh run view 22007891760 --repo whtmdgn1409/codex-1 --log-failed`
+- Temporary mitigation: teams 파서에 추가 fallback(links/JS assignment) 적용 후 재시도 중, 필요 시 teams source URL 대체 전략 검토
+- `[high] live-source network DNS failure`: 실사이트(`https://www.premierleague.com/en/clubs`) 접근 시 `gaierror: nodename nor servname provided`로 fetch 실패
 - Repro command: 문서 3)의 live validate 명령
-- Logs/Evidence: `docs/reports/crawl-002-validate-live.json`
-- Temporary mitigation: 실행 환경의 CA 번들/인증서 체인 정리 후 재검증
+- Logs/Evidence: `docs/reports/crawl-002-validate-live-insecure.json`
+- Temporary mitigation: DNS/네트워크 접근 가능한 실행 환경(예: CI runner)에서 재검증
+- `[medium] parser hardening in progress`: JS assignment/PULSE fallback은 반영됐으나 실사이트 실측 카운트 확정 전
+- Repro command: `make crawler-test` + 문서 3)의 live validate 명령
+- Logs/Evidence: `apps/crawler/tests/test_premierleague_source.py`, `docs/reports/crawl-002-validate-live-insecure.json`
+- Temporary mitigation: 실사이트 접근 가능 시 live validate 재실행 후 리포트 `COMPLETED` 전환
 - `[medium] live-source coverage gap`: fixture 기반 검증은 통과했지만 실사이트 실측 카운트 확정 전
 - Repro command: 문서 3) Run Commands 기준
-- Logs/Evidence: `docs/reports/crawl-002-validate-clean.json`, `docs/reports/crawl-002-validate-live.json`
+- Logs/Evidence: `docs/reports/crawl-002-validate-clean.json`, `docs/reports/crawl-002-validate-live-insecure.json`
 - Temporary mitigation: CI runner(ubuntu)에서 live validate 1회 실행해 환경 편차 확인
 
 ### 5.2 Open Questions
@@ -106,7 +114,7 @@ Validation checks:
 - 정책상 `players`/`match_stats`를 계속 `skip`으로 둘지 운영 데이터 요구사항에 맞춰 `abort`로 승격할지?
 
 ### 5.3 Next Actions
-1. 실행 환경 인증서 체인(CA) 정리 후 실사이트 validate 재실행
+1. DNS/네트워크 접근 가능한 실행 환경에서 실사이트 validate 재실행
 2. CI runner 환경에서도 동일 명령 수행해 로컬/CI 편차 확인
 3. 실사이트 실행값까지 포함해 본 리포트 상태를 `COMPLETED`로 전환
 

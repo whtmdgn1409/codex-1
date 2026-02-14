@@ -40,6 +40,7 @@ Primary Focus: CRAWL-002 완료 전환 + 운영 가드레일 고정 + Web 성능
 - `apps/web` 의존성에서 보안 취약점 경고 존재 (`npm audit` 기준 4건)
 - 현재 `main` 브랜치에 관리자 우회 푸시가 가능했던 이력 존재 (PR-only 운영 고정 필요)
 - `CRAWL-002` 실사이트 validate 시 DNS 해석 오류 발생 (`gaierror: nodename nor servname provided`)
+- `CRAWL-002` CI runner live validate에서도 `teams` dataset 파싱 0건으로 실패 (`no_records_after_all_strategies`)
 - Lighthouse CLI 설치/실행이 현재 네트워크 제약으로 타임아웃(실측 자동화 지연)
 
 ## B) Next Priorities
@@ -102,12 +103,15 @@ Primary Focus: CRAWL-002 완료 전환 + 운영 가드레일 고정 + Web 성능
   - table/header alias + JSON fallback + JS assignment/PULSE fallback 구현
   - dataset별 skip/abort 정책 운영값 정리
 - `P0-1a`: 실사이트 DNS 접근 오류 해결 및 live validate 재실행 진행중
+- `P0-1b`: CI runner live validate 실패 원인(teams 0건) 대응 파서/소스 전략 고도화 진행중
 - `P1-2`: Web 성능 개선 `WEB-Q-001` 적용 진행중 (매치 상세 탭 lazy render + dynamic import)
-- `P1-2`: Web 성능 개선 `WEB-Q-002` 적용 진행중 (Home SSR prefetch 전환)
 
 ## D) Done Log
 - 2026-02-14
-  - `WEB-Q-002` 1차 적용: 홈(`/`) 데이터를 SSR prefetch(`getServerSideProps`)로 전환해 초기 로딩 상태 제거
+  - `CRAWL-002` CI live validate 실행: run `22007750599`, `22007850722`, `22007891760` 실패 원인 확인(`teams` 0건)
+  - `CRAWL-002` teams fallback 보강: required 완화 + links 기반 fallback + 회귀 테스트 추가
+  - `WEB-Q-002` 적용 완료: 홈(`/`) 데이터를 SSR prefetch(`getServerSideProps`)로 전환해 초기 로딩 상태 제거
+  - `Lighthouse Baseline` CI 자동화 실행 확인: run `22007750602`, `22007793692` 성공
   - `Lighthouse Baseline` 자동화 추가: `apps/web/scripts/run-lighthouse-baseline.mjs`, `make web-lighthouse`
   - CI 워크플로 추가: `Crawler Live Validate`, `Lighthouse Baseline`
   - `CRAWL-002` 파서 보강: 스크립트 assignment/PULSE 계열 JSON fallback 추가
