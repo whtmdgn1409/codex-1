@@ -39,10 +39,18 @@ DoD
 - [x] `WEB-003` 매치 상세(라인업/스탯/타임라인 탭)
 - [x] `WEB-004` 순위표/선수통계/구단 화면
 - [x] `WEB-005` 모바일 반응형(우선 390px)
+- [ ] `WEB-Q-001` `/matches/[id]` 탭/차트 코드 스플리팅 + lazy render (P0)
+- [ ] `WEB-Q-002` `/` Hero/뉴스 이미지 최적화 및 LCP 개선 (P0)
+- [ ] `WEB-Q-003` `/matches` 리스트 렌더 비용 절감 (P1)
+- [ ] `WEB-Q-004` `/standings` 접근성 semantics + CLS 안정화 (P1)
 
 DoD
 - [ ] 주요 플로우 E2E 통과
-- [ ] Lighthouse 성능/접근성 기준 합의치 달성
+- [ ] Lighthouse 대상 라우트(`/`, `/matches`, `/matches/[id]`, `/standings`) 모바일/데스크톱 3회 측정 중앙값 기록
+- [ ] Lighthouse Mobile: Performance >= 70, Accessibility >= 95, Best Practices >= 95, SEO >= 95
+- [ ] Lighthouse Desktop: Performance >= 90, Accessibility >= 95, Best Practices >= 95, SEO >= 95
+- [ ] Mobile CWV: LCP <= 3.2s, INP <= 250ms, CLS <= 0.10, TBT <= 300ms
+- [ ] Desktop CWV: LCP <= 2.0s, INP <= 200ms, CLS <= 0.10, TBT <= 150ms
 
 ## Milestone 5: Batch & Ops (Week 6-8)
 - [x] `BATCH-001` 일배치(매일 09:00) 스케줄러 (`Batch Scheduler` + `make crawler-daily`)

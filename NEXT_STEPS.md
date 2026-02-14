@@ -1,7 +1,7 @@
 # NEXT STEPS
 
 Last Updated: 2026-02-13
-Primary Focus: Crawler 실데이터 확장 + Web 품질 고도화 + 운영 안정화
+Primary Focus: CRAWL-002 완료 + Web E2E 안정화 + 운영 가드레일 고정
 
 ## A) Current Status
 
@@ -16,11 +16,13 @@ Primary Focus: Crawler 실데이터 확장 + Web 품질 고도화 + 운영 안�
   - `/`, `/matches`, `/matches/[id]`, `/standings`, `/stats`, `/teams`, `/teams/[id]`
 - 완료: `make web-lint`, `make web-build` 통과
 - 완료: `make web-dev` 기동 확인 (`http://localhost:3000`)
+- 진행중: Playwright E2E 핵심 플로우 2건 추가 (`apps/web/tests/e2e/core-flows.spec.ts`)
 
 ### Infra/CI
 - 완료: `CI / api` 워크플로 구성
 - 완료: 브랜치 보호 규칙에 `CI / api` 필수 체크 적용
 - 완료: `Batch Scheduler` 워크플로 추가 (일/주 배치 cron + 수동 실행)
+- 완료: `CI`에 Web E2E job 추가 및 필수 단계로 전환
 
 ### Crawler/Batch
 - 완료: `CRAWL-001` 초기 수집 파이프라인(샘플 소스 + 멱등 업서트)
@@ -28,6 +30,7 @@ Primary Focus: Crawler 실데이터 확장 + Web 품질 고도화 + 운영 안�
 - 완료: `BATCH-002` 주배치 스케줄러 연동 (`make crawler-weekly`, 매주 목 12:00 KST)
 - 완료: `BATCH-003` 실패 재시도/Slack 알림 연동 (`BATCH_RETRY_*`, `BATCH_ALERT_SLACK_WEBHOOK`)
 - 진행중: `CRAWL-002` 공식 사이트 파서 고도화 (table alias + JSON fallback + dataset 정책)
+- 완료: `CRAWL-002` fixture 기반 파서 회귀테스트 추가 (`apps/crawler/tests/fixtures/premier_league/*`)
 
 ### Known Issues / Risks
 - `apps/web` 의존성에서 보안 취약점 경고 존재 (`npm audit` 기준 4건)
@@ -65,10 +68,18 @@ Primary Focus: Crawler 실데이터 확장 + Web 품질 고도화 + 운영 안�
   - 취약점 영향 분석
   - 업그레이드/대체 패키지 계획 수립
 
+## B-1) Execution Queue (Concrete)
+1. `CRAWL-002` ingest 결과 검증 리포트 작성 (pl 모드 기준)
+2. Web E2E `home -> matches -> match detail` mock/검증 안정화 (남은 1건)
+3. Lighthouse 기준치 측정 실행 및 baseline JSON 아카이빙
+4. 브랜치 보호 규칙의 required checks에 `CI / web-e2e` 추가
+5. 운영 보강: `set_branch_protection.sh`로 `enforce_admins=true` 적용 확인
+
 ## C) In Progress
 - `P0-1`: Premier League 공식 사이트 기반 데이터소스(`pl`) 안정화 작업 진행중
   - table/header alias + JSON fallback 구현
   - dataset별 skip/abort 정책 운영값 정리
+- `P1-1`: Web 핵심 E2E 2건 중 1건 안정화 완료, 1건 보강 진행중
 
 ## D) Done Log
 - 2026-02-13
@@ -82,6 +93,8 @@ Primary Focus: Crawler 실데이터 확장 + Web 품질 고도화 + 운영 안�
   - `BATCH-001`, `BATCH-002` GitHub Actions 스케줄러 연동 완료 (`Batch Scheduler`)
   - `BATCH-003` 재시도 정책 + Slack Webhook 실패 알림 연동 완료
   - `CRAWL-002` 1차 안정화: 다중 파싱 전략(table -> JSON fallback) 및 dataset fallback 정책 도입
+  - `CRAWL-002` fixture(official-like html/json) 기반 테스트 확대
+  - 운영 보강: PR-only/enforce_admins 및 시크릿 체크리스트 문서 반영
 
 ## E) Working Rules
 1. 개발 시작 전

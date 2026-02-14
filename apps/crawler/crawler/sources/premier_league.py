@@ -15,11 +15,11 @@ from crawler.sources.types import MatchPayload, MatchStatPayload, PlayerPayload,
 Dataset = str
 
 TEAM_ALIASES: dict[str, list[str]] = {
-    "name": ["name", "club", "team", "team_name"],
-    "short_name": ["short_name", "abbr", "short", "code", "team_short_name"],
-    "logo_url": ["logo_url", "logo", "crest", "image_url"],
-    "stadium": ["stadium", "venue", "ground"],
-    "manager": ["manager", "coach", "head_coach"],
+    "name": ["name", "club", "team", "team_name", "club_name"],
+    "short_name": ["short_name", "abbr", "short", "code", "team_short_name", "abbreviation", "shortname"],
+    "logo_url": ["logo_url", "logo", "crest", "image_url", "crest_url", "badge", "badge_url"],
+    "stadium": ["stadium", "venue", "ground", "stadium_name", "home_stadium"],
+    "manager": ["manager", "coach", "head_coach", "headcoach"],
 }
 
 PLAYER_ALIASES: dict[str, list[str]] = {
@@ -33,30 +33,46 @@ PLAYER_ALIASES: dict[str, list[str]] = {
 }
 
 MATCH_ALIASES: dict[str, list[str]] = {
-    "round": ["round", "matchweek", "week", "gw"],
-    "match_date": ["match_date", "date", "kickoff", "kickoff_time"],
-    "home_team_short_name": ["home_team_short_name", "home_team", "home"],
-    "away_team_short_name": ["away_team_short_name", "away_team", "away"],
+    "round": ["round", "matchweek", "match_week", "week", "gw"],
+    "match_date": ["match_date", "date", "kickoff", "kickoff_time", "kickoff_date", "kickoff_datetime", "kickoff_utc", "kickoff_label"],
+    "home_team_short_name": [
+        "home_team_short_name",
+        "home_team_shortname",
+        "home_team_short",
+        "home_team",
+        "home_team_code",
+        "home",
+    ],
+    "away_team_short_name": [
+        "away_team_short_name",
+        "away_team_shortname",
+        "away_team_short",
+        "away_team",
+        "away_team_code",
+        "away",
+    ],
     "home_score": ["home_score", "home_goals", "score_home"],
     "away_score": ["away_score", "away_goals", "score_away"],
-    "status": ["status", "result_status", "state"],
+    "status": ["status", "match_status", "result_status", "state"],
 }
 
 MATCH_STATS_ALIASES: dict[str, list[str]] = {
-    "round": ["round", "matchweek", "week", "gw"],
-    "home_team_short_name": ["home_team_short_name", "home_team", "home"],
-    "away_team_short_name": ["away_team_short_name", "away_team", "away"],
-    "team_short_name": ["team_short_name", "team", "club"],
-    "possession": ["possession", "possession_pct"],
+    "round": ["round", "matchweek", "match_week", "week", "gw"],
+    "home_team_short_name": ["home_team_short_name", "home_team_shortname", "home_team", "home_team_code", "home"],
+    "away_team_short_name": ["away_team_short_name", "away_team_shortname", "away_team", "away_team_code", "away"],
+    "team_short_name": ["team_short_name", "team_shortname", "team_code", "team", "club"],
+    "possession": ["possession", "possession_pct", "possession_percent", "possession_percentage"],
     "shots": ["shots", "total_shots"],
-    "shots_on_target": ["shots_on_target", "shots_ot", "sot"],
+    "shots_on_target": ["shots_on_target", "shots_ot", "sot", "on_target"],
     "fouls": ["fouls", "fouls_committed"],
-    "corners": ["corners", "corner_kicks"],
+    "corners": ["corners", "corner_kicks", "corners_won"],
 }
 
 
 def _normalize_key(value: str) -> str:
-    normalized = value.strip().lower()
+    normalized = value.strip()
+    normalized = re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", normalized)
+    normalized = normalized.lower()
     normalized = normalized.replace("%", "pct")
     normalized = re.sub(r"[\s\-\/]+", "_", normalized)
     normalized = re.sub(r"[^a-z0-9_]", "", normalized)
@@ -394,17 +410,50 @@ class PremierLeagueDataSource(DataSource):
                 values.append(obj)
 
         for block in parser.script_blocks:
-            for pattern in (
-                r"__NEXT_DATA__\s*=\s*(\{.*?\})\s*;",
-                r"__PRELOADED_STATE__\s*=\s*(\{.*?\})\s*;",
-            ):
-                match = re.search(pattern, block, re.DOTALL)
-                if not match:
+            for variable in ("__NEXT_DATA__", "__PRELOADED_STATE__", "__INITIAL_STATE__"):
+                raw = self._extract_assigned_json(block, variable)
+                if raw is None:
                     continue
-                obj = self._json_load(match.group(1))
+                obj = self._json_load(raw)
                 if obj is not None:
                     values.append(obj)
         return values
+
+    def _extract_assigned_json(self, script_block: str, variable: str) -> str | None:
+        marker_index = script_block.find(variable)
+        if marker_index < 0:
+            return None
+        eq_index = script_block.find("=", marker_index)
+        if eq_index < 0:
+            return None
+        start = script_block.find("{", eq_index)
+        if start < 0:
+            return None
+
+        depth = 0
+        in_string = False
+        escaped = False
+        for idx in range(start, len(script_block)):
+            char = script_block[idx]
+            if escaped:
+                escaped = False
+                continue
+            if char == "\\":
+                escaped = True
+                continue
+            if char == '"':
+                in_string = not in_string
+                continue
+            if in_string:
+                continue
+            if char == "{":
+                depth += 1
+                continue
+            if char == "}":
+                depth -= 1
+                if depth == 0:
+                    return script_block[start : idx + 1]
+        return None
 
     def _json_load(self, raw: str) -> object | None:
         try:
@@ -421,7 +470,7 @@ class PremierLeagueDataSource(DataSource):
         records = self._flatten_dict_records(candidate)
         mapped: list[dict[str, str]] = []
         for record in records:
-            normalized = {_normalize_key(str(k)): str(v) for k, v in record.items() if v is not None}
+            normalized = self._flatten_record_values(record)
             item: dict[str, str] = {}
             for canonical, candidates in aliases.items():
                 for alias in candidates:
@@ -433,13 +482,59 @@ class PremierLeagueDataSource(DataSource):
                 mapped.append(item)
         return mapped
 
+    def _flatten_record_values(self, record: dict[str, object]) -> dict[str, str]:
+        values: dict[str, str] = {}
+
+        def _set_value(path: str, value: object) -> None:
+            text = str(value).strip()
+            if not text:
+                return
+            segments = [segment for segment in path.split("_") if segment]
+            if path not in values:
+                values[path] = text
+            if len(segments) >= 2:
+                tail_two = "_".join(segments[-2:])
+                if tail_two and tail_two not in values:
+                    values[tail_two] = text
+            tail_one = segments[-1] if segments else ""
+            if tail_one and tail_one not in values:
+                values[tail_one] = text
+
+        queue: list[tuple[str, object]] = [("", record)]
+        while queue:
+            prefix, current = queue.pop(0)
+            if isinstance(current, dict):
+                for raw_key, raw_value in current.items():
+                    if raw_value is None:
+                        continue
+                    key = _normalize_key(str(raw_key))
+                    if not key:
+                        continue
+                    next_prefix = f"{prefix}_{key}" if prefix else key
+                    queue.append((next_prefix, raw_value))
+                continue
+            if isinstance(current, list):
+                for item in current:
+                    if isinstance(item, (dict, list)):
+                        queue.append((prefix, item))
+                    elif prefix:
+                        _set_value(prefix, item)
+                continue
+            if prefix:
+                _set_value(prefix, current)
+        return values
+
     def _flatten_dict_records(self, obj: object) -> list[dict[str, object]]:
         queue = [obj]
         records: list[dict[str, object]] = []
         while queue:
             current = queue.pop(0)
             if isinstance(current, dict):
-                records.append(current)
+                has_scalar_value = any(
+                    value is not None and not isinstance(value, (dict, list)) for value in current.values()
+                )
+                if has_scalar_value:
+                    records.append(current)
                 for value in current.values():
                     if isinstance(value, (dict, list)):
                         queue.append(value)

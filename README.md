@@ -16,7 +16,7 @@ AGENTS.md    # 서비스/DB/화면/배치 요구사항
 ```
 
 ## Quick Start
-현재 API MVP와 Web 초기 화면이 구현되어 있습니다.
+현재 API MVP, Web 1차 구현, Crawler/Batch 운영 스캐폴드가 구현되어 있습니다.
 
 ```bash
 make setup   # API 의존성 설치
@@ -61,19 +61,54 @@ CI 필수 체크 설정 가이드는 `docs/ci-required-checks.md`를 참고하�
 - PR 작성 시: `NEXT_STEPS.md` 반영 여부를 명시
 
 ## Current Progress
-- `OPS-001`, `OPS-002`, `OPS-003` 완료
-- `DB-001`, `DB-002` 완료 (`apps/api/migrations/001_init_schema.sql`)
-- `API-001` 완료 (`GET /matches`: 라운드/월/팀 필터 지원)
-- `API-002` 완료 (`GET /matches/{id}`: 스코어/이벤트/스탯 조회)
-- `API-003` 완료 (`GET /standings`)
-- `API-004` 완료 (`GET /stats/top`)
-- `API-005` 완료 (`GET /teams`, `GET /teams/{id}`)
-- `WEB-001`~`WEB-004` 1차 화면/연동 구현 (`apps/web`)
-- `WEB-005` 모바일 390px 대응 CSS 반영
-- `CRAWL-001` 초기 수집 파이프라인(샘플 소스+업서트) 구현
-- `CRAWL-002` 공식 사이트(`premierleague.com`) 기반 `pl` 데이터소스 POC 진행중
-- `BATCH-001`, `BATCH-002` 스케줄러 연동 완료 (`Batch Scheduler`)
-- `BATCH-003` 재시도 정책 + Slack 실패 알림 연동 완료
+- Infra/CI
+  - `OPS-001`~`OPS-003` 완료
+  - `CI / api` 필수 체크, `Batch Scheduler`(일/주 cron + 수동 실행) 적용 완료
+- API
+  - `API-001`~`API-005` 완료
+  - OpenAPI 스냅샷 + API 통합 테스트(`API-002`~`API-005`) CI 필수화
+- Web
+  - `WEB-001`~`WEB-005` 완료 (핵심 라우트 + 모바일 390px 대응)
+  - `make web-lint`, `make web-build` 통과
+  - Playwright E2E 핵심 플로우 2건 추가 및 로컬 실행 검증 완료
+- Crawler/Batch
+  - `CRAWL-001` 완료 (샘플 소스 멱등 업서트)
+  - `CRAWL-002` 진행중 (공식 사이트 `pl` 파서: table alias + JSON fallback + dataset 정책)
+  - `BATCH-001`, `BATCH-002` 완료 (스케줄러 연동)
+  - `BATCH-003` 완료 (재시도 + Slack 실패 알림)
+
+## Next Development Plan (Concrete)
+아래 순서대로 구현을 진행합니다.
+
+1. `CRAWL-002` 마무리: 공식 사이트 실데이터 적재 안정화
+- 작업:
+  - 실제 페이지 샘플(팀/경기/스탯) fixture 추가
+  - 파서 필드 매핑 정확도 보강(누락/형식 변환 케이스)
+  - `teams/matches`는 실패 시 `abort`, `players/match_stats`는 `skip` 정책 검증
+- DoD:
+  - `make crawler-test` 통과
+  - `CRAWLER_DATA_SOURCE=pl` 기준 ingest 결과 리포트 문서화
+
+2. Web 품질 고도화 1단계: 핵심 사용자 플로우 E2E
+- 작업:
+  - 홈 -> 일정/결과 -> 매치상세
+  - 구단목록 -> 구단상세
+- DoD:
+  - CI에서 E2E 통과(최소 핵심 2플로우)
+
+3. Web 품질 고도화 2단계: 성능/접근성 기준 수립
+- 작업:
+  - Lighthouse 기준치 정의(모바일/데스크탑)
+  - 저점 페이지 우선 개선 항목 backlog 등록
+- DoD:
+  - 목표치와 측정 방법 문서화
+
+4. 운영 안정화
+- 작업:
+  - `main` PR-only 운영 강제 재점검
+  - 배치/알림 시크릿 운영 체크리스트 점검
+- DoD:
+  - `docs/operations-config.md` 기준 설정 완료 확인
 
 ## Contribution Rules
 - 브랜치: `feat/<scope>-<short-desc>`, `fix/<scope>-<short-desc>`

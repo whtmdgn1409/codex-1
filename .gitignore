@@ -7,3 +7,5 @@ __pycache__/
 node_modules/
 .next/
 /package-lock.json
+apps/web/test-results/
+apps/web/playwright-report/
