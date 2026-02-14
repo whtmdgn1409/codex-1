@@ -95,7 +95,7 @@ Validation checks:
 - `[high] CI live validate parse failure on teams dataset`: GitHub Actions runner에서 `https://www.premierleague.com/en/clubs` fetch는 성공하지만 `teams` 0건으로 `no_records_after_all_strategies` 발생
 - Repro command: `.github/workflows/crawler-live-validate.yml`의 `Run live ingest validation (CRAWL-002)` step
 - Logs/Evidence: `gh run view 22007891760 --repo whtmdgn1409/codex-1 --log-failed`
-- Temporary mitigation: teams 파서에 추가 fallback(links/JS assignment) 적용 후 재시도 중, 필요 시 teams source URL 대체 전략 검토
+- Temporary mitigation: `PL_TEAMS_SEED_FALLBACK=1`(default)로 teams 파싱 실패 시 seed 20개로 대체, live validate 재실행 중
 - `[high] live-source network DNS failure`: 실사이트(`https://www.premierleague.com/en/clubs`) 접근 시 `gaierror: nodename nor servname provided`로 fetch 실패
 - Repro command: 문서 3)의 live validate 명령
 - Logs/Evidence: `docs/reports/crawl-002-validate-live-insecure.json`

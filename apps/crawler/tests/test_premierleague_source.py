@@ -30,6 +30,7 @@ def _source_config() -> SourceConfig:
         dataset_policy_players="skip",
         dataset_policy_matches="skip",
         dataset_policy_match_stats="skip",
+        teams_seed_fallback=True,
     )
 
 
@@ -142,6 +143,30 @@ def test_dataset_policy_abort_raises_when_no_records(monkeypatch: pytest.MonkeyP
 
     with pytest.raises(ValueError):
         source.load_match_stats()
+
+
+def test_teams_seed_fallback_returns_seed_when_parse_fails(monkeypatch: pytest.MonkeyPatch) -> None:
+    config = _source_config()
+    config.dataset_policy_teams = "abort"
+    config.teams_seed_fallback = True
+    source = PremierLeagueDataSource(config)
+    monkeypatch.setattr(source, "_http_get", lambda _: "<html><body><div>empty</div></body></html>")
+
+    teams = source.load_teams()
+
+    assert len(teams) >= 20
+    assert any(team["short_name"] == "ARS" for team in teams)
+
+
+def test_teams_seed_fallback_disabled_honors_abort_policy(monkeypatch: pytest.MonkeyPatch) -> None:
+    config = _source_config()
+    config.dataset_policy_teams = "abort"
+    config.teams_seed_fallback = False
+    source = PremierLeagueDataSource(config)
+    monkeypatch.setattr(source, "_http_get", lambda _: "<html><body><div>empty</div></body></html>")
+
+    with pytest.raises(ValueError):
+        source.load_teams()
 
 
 def test_premierleague_fetch_retry(monkeypatch: pytest.MonkeyPatch) -> None:

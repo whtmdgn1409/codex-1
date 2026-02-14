@@ -25,6 +25,9 @@
     - `PL_POLICY_PLAYERS=abort|skip` (기본 `skip`)
     - `PL_POLICY_MATCHES=abort|skip` (기본 `abort`)
     - `PL_POLICY_MATCH_STATS=abort|skip` (기본 `skip`)
+  - Teams seed fallback:
+    - `PL_TEAMS_SEED_FALLBACK=1` (기본): teams 파싱 실패 시 seed 팀 목록으로 대체
+    - `PL_TEAMS_SEED_FALLBACK=0`: seed fallback 비활성화(정책값 그대로 abort/skip 적용)
 
 ## Field Mapping (Crawler Payload)
 - `teams`: `name`, `short_name`, `logo_url`, `stadium`, `manager`
@@ -51,3 +54,4 @@
 - 운영 안정성 기준:
   - 핵심 데이터셋(`teams`, `matches`)은 `abort`
   - 부가 데이터셋(`players`, `match_stats`)은 `skip`
+  - 단, `teams`는 공식 페이지 파싱 실패 대비 seed fallback을 기본 활성화

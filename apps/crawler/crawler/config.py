@@ -33,6 +33,7 @@ class SourceConfig:
     dataset_policy_players: str
     dataset_policy_matches: str
     dataset_policy_match_stats: str
+    teams_seed_fallback: bool
 
 
 @dataclass
@@ -91,6 +92,7 @@ def load_source_config() -> SourceConfig:
     parse_strict_raw = os.getenv("PL_PARSE_STRICT", "0").strip().lower()
     verify_ssl_raw = os.getenv("PL_HTTP_VERIFY_SSL", "1").strip().lower()
     ca_file_raw = os.getenv("PL_HTTP_CA_FILE", "").strip()
+    teams_seed_fallback_raw = os.getenv("PL_TEAMS_SEED_FALLBACK", "1").strip().lower()
     return SourceConfig(
         source=os.getenv("CRAWLER_DATA_SOURCE", "sample").strip().lower(),
         teams_url=os.getenv("PL_TEAMS_URL", "https://www.premierleague.com/en/clubs"),
@@ -107,6 +109,7 @@ def load_source_config() -> SourceConfig:
         dataset_policy_players=os.getenv("PL_POLICY_PLAYERS", "skip").strip().lower(),
         dataset_policy_matches=os.getenv("PL_POLICY_MATCHES", "abort").strip().lower(),
         dataset_policy_match_stats=os.getenv("PL_POLICY_MATCH_STATS", "skip").strip().lower(),
+        teams_seed_fallback=teams_seed_fallback_raw in {"1", "true", "yes", "on"},
     )
 
 

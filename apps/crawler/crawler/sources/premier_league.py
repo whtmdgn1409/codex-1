@@ -11,6 +11,7 @@ from urllib.request import Request, urlopen
 from crawler.config import SourceConfig
 from crawler.logging_utils import log_event
 from crawler.sources.base import DataSource
+from crawler.sources.teams_seed import load_seed_teams
 from crawler.sources.types import MatchPayload, MatchStatPayload, PlayerPayload, TeamPayload
 
 Dataset = str
@@ -255,6 +256,10 @@ class PremierLeagueDataSource(DataSource):
             if records:
                 log_event("INFO", "pl.parse.strategy", dataset="teams", strategy="links", rows=len(records))
         if not records:
+            if self.config.teams_seed_fallback:
+                seed_payload = load_seed_teams()
+                log_event("WARNING", "pl.parse.teams_seed_fallback", rows=len(seed_payload))
+                return seed_payload
             records = self._handle_dataset_issue("teams", reason="no_records_after_all_strategies")
 
         payload: list[TeamPayload] = []
