@@ -1,6 +1,11 @@
 name: Crawler Live Validate
 
 on:
+  push:
+    branches:
+      - "feat/**"
+      - "fix/**"
+      - "chore/**"
   workflow_dispatch:
   schedule:
     - cron: "30 0 * * *" # 09:30 KST daily
