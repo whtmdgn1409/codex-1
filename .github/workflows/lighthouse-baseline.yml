@@ -1,0 +1,36 @@
+name: Lighthouse Baseline
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 1 * * 1" # Every Monday 10:00 KST
+
+jobs:
+  lighthouse:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install web dependencies
+        run: cd apps/web && npm install
+
+      - name: Build web app
+        run: cd apps/web && npm run build
+
+      - name: Run Lighthouse baseline (3 runs per route/preset)
+        run: make web-lighthouse
+
+      - name: Upload Lighthouse reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-baseline-report
+          path: docs/reports/lighthouse
+          if-no-files-found: warn
