@@ -41,6 +41,7 @@ Primary Focus: CRAWL-002 완료 전환 + 운영 가드레일 고정 + Web 성능
 - 현재 `main` 브랜치에 관리자 우회 푸시가 가능했던 이력 존재 (PR-only 운영 고정 필요)
 - `CRAWL-002` 실사이트 validate 시 DNS 해석 오류 발생 (`gaierror: nodename nor servname provided`)
 - `CRAWL-002` CI runner live validate에서도 `teams` dataset 파싱 0건으로 실패 (`no_records_after_all_strategies`)
+- `CRAWL-002` teams seed fallback 적용 이후에도 `matches` dataset 파싱 0건으로 live validate 실패
 - Lighthouse CLI 설치/실행이 현재 네트워크 제약으로 타임아웃(실측 자동화 지연)
 
 ## B) Next Priorities
@@ -110,6 +111,8 @@ Primary Focus: CRAWL-002 완료 전환 + 운영 가드레일 고정 + Web 성능
 - 2026-02-14
   - `CRAWL-002` teams 운영 완화 적용: 공식 파싱 실패 시 seed(20개) fallback(`PL_TEAMS_SEED_FALLBACK=1` default)
   - `CRAWL-002` seed fallback 회귀 테스트 추가 및 validate 로컬 검증(`teams=20, matches=1`) 확인
+  - `CRAWL-002` fetch-failure 정책 보강: `players/match_stats`는 fetch 오류 시 `skip` 정책 적용
+  - CI live validate 최신 실패 원인 전환 확인: `teams` -> `matches` 파싱 0건 (run `22008081423`)
   - `CRAWL-002` CI live validate 실행: run `22007750599`, `22007850722`, `22007891760` 실패 원인 확인(`teams` 0건)
   - `CRAWL-002` teams fallback 보강: required 완화 + links 기반 fallback + 회귀 테스트 추가
   - `WEB-Q-002` 적용 완료: 홈(`/`) 데이터를 SSR prefetch(`getServerSideProps`)로 전환해 초기 로딩 상태 제거
