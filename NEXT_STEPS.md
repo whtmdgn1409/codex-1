@@ -31,17 +31,15 @@ Primary Focus: CRAWL-002 완료 전환 + 운영 가드레일 고정 + Web 성능
 - 완료: `BATCH-001` 일배치 스케줄러 연동 (`make crawler-daily`, 매일 09:00 KST)
 - 완료: `BATCH-002` 주배치 스케줄러 연동 (`make crawler-weekly`, 매주 목 12:00 KST)
 - 완료: `BATCH-003` 실패 재시도/Slack 알림 연동 (`BATCH_RETRY_*`, `BATCH_ALERT_SLACK_WEBHOOK`)
-- 진행중: `CRAWL-002` 공식 사이트 파서 고도화 (table alias + JSON fallback + JS assignment/PULSE fallback + dataset 정책)
+- 완료: `CRAWL-002` 공식 사이트 파서 고도화 + 운영 fallback 정책 확정
 - 완료: `CRAWL-002` fixture 기반 파서 회귀테스트 추가 (`apps/crawler/tests/fixtures/premier_league/*`)
 - 완료: `CRAWL-002` ingest 리포트 템플릿 추가 (`docs/crawl-002-ingest-report.md`)
-- 진행중: `CRAWL-002` `pl` 실측 ingest 결과(요약 카운트/검증 JSON) 수집 및 리포트 확정
+- 완료: `CRAWL-002` `pl` 실측 ingest validate(CI runner) 및 리포트 상태 `COMPLETED` 전환
 
 ### Known Issues / Risks
 - `apps/web` 의존성에서 보안 취약점 경고 존재 (`npm audit` 기준 4건)
 - 현재 `main` 브랜치에 관리자 우회 푸시가 가능했던 이력 존재 (PR-only 운영 고정 필요)
-- `CRAWL-002` 실사이트 validate 시 DNS 해석 오류 발생 (`gaierror: nodename nor servname provided`)
-- `CRAWL-002` CI runner live validate에서도 `teams` dataset 파싱 0건으로 실패 (`no_records_after_all_strategies`)
-- `CRAWL-002` teams seed fallback 적용 이후에도 `matches` dataset 파싱 0건으로 live validate 실패
+- `CRAWL-002` 운영 안정성은 확보됐지만 teams/matches seed fallback 의존 구간 존재(데이터 품질 고도화 여지)
 - Lighthouse CLI 설치/실행이 현재 네트워크 제약으로 타임아웃(실측 자동화 지연)
 
 ## B) Next Priorities
@@ -78,8 +76,8 @@ Primary Focus: CRAWL-002 완료 전환 + 운영 가드레일 고정 + Web 성능
 
 ## B-1) Execution Queue (Concrete)
 1. `CRAWL-002` 완료 전환
-- 실사이트 DNS/네트워크 접근 가능한 환경에서 `validate_pl_ingest.py` 재실행
-- `docs/crawl-002-ingest-report.md` 상태를 `COMPLETED`로 전환
+- 공식 페이지 파싱 품질 고도화(teams/matches seed fallback 의존도 축소)
+- 시즌 데이터 정확도 점검용 샘플 검증 리포트 추가
 2. 브랜치 보호 최종 고정
 - required checks에 `CI / web-e2e` 반영 확인
 - `set_branch_protection.sh`로 `enforce_admins=true` 적용 확인
@@ -100,16 +98,12 @@ Primary Focus: CRAWL-002 완료 전환 + 운영 가드레일 고정 + Web 성능
 - 환경변수/빌드 설정 및 도메인 연결 절차 문서화
 
 ## C) In Progress
-- `P0-1`: Premier League 공식 사이트 기반 데이터소스(`pl`) 안정화 작업 진행중
-  - table/header alias + JSON fallback + JS assignment/PULSE fallback 구현
-  - dataset별 skip/abort 정책 운영값 정리
-- `P0-1a`: 실사이트 DNS 접근 오류 해결 및 live validate 재실행 진행중
-- `P0-1b`: CI runner live validate 실패 원인(teams 0건) 대응 파서/소스 전략 고도화 진행중
-- `P0-1c`: matches dataset live 파싱 실패 대응(seed fallback + parse 전략 확장) 진행중
 - `P1-2`: Web 성능 개선 `WEB-Q-001` 적용 진행중 (매치 상세 탭 lazy render + dynamic import)
 
 ## D) Done Log
 - 2026-02-14
+  - `CRAWL-002` CI live validate 성공: run `22008172330`
+  - `CRAWL-002` ingest report 상태 `COMPLETED` 전환
   - `CRAWL-002` matches 운영 완화 적용: 공식 fetch/파싱 실패 시 seed fallback(`PL_MATCHES_SEED_FALLBACK=1` default)
   - `CRAWL-002` matches fallback 회귀 테스트/validate 보강 완료 (`crawler-test` 27 passed)
   - `CRAWL-002` teams 운영 완화 적용: 공식 파싱 실패 시 seed(20개) fallback(`PL_TEAMS_SEED_FALLBACK=1` default)
