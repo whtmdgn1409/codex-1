@@ -1,0 +1,1 @@
+{"ok": true, "summary": {"teams": 2, "players": 2, "matches": 1, "match_stats": 2}, "checks": [{"name": "teams_non_zero", "enabled": true, "ok": true, "actual": 2, "expected": ">=1"}, {"name": "matches_non_zero", "enabled": true, "ok": true, "actual": 1, "expected": ">=1"}]}

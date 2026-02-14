@@ -16,7 +16,7 @@ Primary Focus: CRAWL-002 완료 + Web E2E 안정화 + 운영 가드레일 고정
   - `/`, `/matches`, `/matches/[id]`, `/standings`, `/stats`, `/teams`, `/teams/[id]`
 - 완료: `make web-lint`, `make web-build` 통과
 - 완료: `make web-dev` 기동 확인 (`http://localhost:3000`)
-- 진행중: Playwright E2E 핵심 플로우 2건 추가 (`apps/web/tests/e2e/core-flows.spec.ts`)
+- 완료: Playwright E2E 핵심 플로우 2건 추가 및 로컬 실행 검증 (`apps/web/tests/e2e/core-flows.spec.ts`)
 
 ### Infra/CI
 - 완료: `CI / api` 워크플로 구성
@@ -31,10 +31,13 @@ Primary Focus: CRAWL-002 완료 + Web E2E 안정화 + 운영 가드레일 고정
 - 완료: `BATCH-003` 실패 재시도/Slack 알림 연동 (`BATCH_RETRY_*`, `BATCH_ALERT_SLACK_WEBHOOK`)
 - 진행중: `CRAWL-002` 공식 사이트 파서 고도화 (table alias + JSON fallback + dataset 정책)
 - 완료: `CRAWL-002` fixture 기반 파서 회귀테스트 추가 (`apps/crawler/tests/fixtures/premier_league/*`)
+- 완료: `CRAWL-002` ingest 리포트 템플릿 추가 (`docs/crawl-002-ingest-report.md`)
+- 진행중: `CRAWL-002` `pl` 실측 ingest 결과(요약 카운트/검증 JSON) 수집 및 리포트 확정
 
 ### Known Issues / Risks
 - `apps/web` 의존성에서 보안 취약점 경고 존재 (`npm audit` 기준 4건)
 - 현재 `main` 브랜치에 관리자 우회 푸시가 가능했던 이력 존재 (PR-only 운영 고정 필요)
+- `CRAWL-002` 실사이트 validate 시 SSL 인증서 검증 오류 발생 (`CERTIFICATE_VERIFY_FAILED`)
 
 ## B) Next Priorities
 
@@ -42,14 +45,14 @@ Primary Focus: CRAWL-002 완료 + Web E2E 안정화 + 운영 가드레일 고정
 1. Crawler 소스 확장 (Premier League 공식 사이트 파서 도입)
 - 목적: 샘플 데이터가 아닌 실제 시즌 데이터 적재
 - DoD:
-  - 공식 사이트 데이터 파싱(팀/경기/핵심 스탯) 구현
-  - 파싱 실패 케이스 로깅 및 재시도 전략 정의
+  - `docs/crawl-002-ingest-report.md`에 `pl` 실측 실행 근거(명령/로그/검증 JSON) 기록
+  - `summary` 실제 카운트 및 검증 결과(`teams>0`, `matches>0`) 확정
 
 2. Premier League 공식 사이트 파서 안정화
 - 목적: 실제 운영 데이터 품질 확보
 - DoD:
   - 공식 사이트 DOM 변화 대응 파서 보강
-  - 파싱 실패 시 fallback/skip 정책 구체화
+  - 파싱 실패 시 fallback/skip 정책 구체화 및 리포트 이슈 섹션 반영
 
 ### P1
 1. Web E2E/핵심 사용자 플로우 테스트 추가
@@ -69,8 +72,8 @@ Primary Focus: CRAWL-002 완료 + Web E2E 안정화 + 운영 가드레일 고정
   - 업그레이드/대체 패키지 계획 수립
 
 ## B-1) Execution Queue (Concrete)
-1. `CRAWL-002` ingest 결과 검증 리포트 작성 (pl 모드 기준)
-2. Web E2E `home -> matches -> match detail` mock/검증 안정화 (남은 1건)
+1. `CRAWL-002` ingest 결과 검증 리포트 실측값 채우기 및 상태 판정 (`IN_PROGRESS` -> `COMPLETED`)
+2. 실사이트 URL validate SSL 오류 해결(CA 체인) 후 재실행
 3. Lighthouse 기준치 측정 실행 및 baseline JSON 아카이빙
 4. 브랜치 보호 규칙의 required checks에 `CI / web-e2e` 추가
 5. 운영 보강: `set_branch_protection.sh`로 `enforce_admins=true` 적용 확인
@@ -79,7 +82,6 @@ Primary Focus: CRAWL-002 완료 + Web E2E 안정화 + 운영 가드레일 고정
 - `P0-1`: Premier League 공식 사이트 기반 데이터소스(`pl`) 안정화 작업 진행중
   - table/header alias + JSON fallback 구현
   - dataset별 skip/abort 정책 운영값 정리
-- `P1-1`: Web 핵심 E2E 2건 중 1건 안정화 완료, 1건 보강 진행중
 
 ## D) Done Log
 - 2026-02-13

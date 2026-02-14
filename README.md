@@ -73,7 +73,8 @@ CI 필수 체크 설정 가이드는 `docs/ci-required-checks.md`를 참고하�
   - Playwright E2E 핵심 플로우 2건 추가 및 로컬 실행 검증 완료
 - Crawler/Batch
   - `CRAWL-001` 완료 (샘플 소스 멱등 업서트)
-  - `CRAWL-002` 진행중 (공식 사이트 `pl` 파서: table alias + JSON fallback + dataset 정책)
+  - `CRAWL-002` 진행중 (공식 사이트 `pl` 파서 안정화 완료 + ingest 리포트 템플릿 작성: `docs/crawl-002-ingest-report.md`)
+  - `CRAWL-002` 실사이트 validate 실행에서 SSL 인증서 검증 이슈 확인(`CERTIFICATE_VERIFY_FAILED`)
   - `BATCH-001`, `BATCH-002` 완료 (스케줄러 연동)
   - `BATCH-003` 완료 (재시도 + Slack 실패 알림)
 
@@ -82,12 +83,12 @@ CI 필수 체크 설정 가이드는 `docs/ci-required-checks.md`를 참고하�
 
 1. `CRAWL-002` 마무리: 공식 사이트 실데이터 적재 안정화
 - 작업:
-  - 실제 페이지 샘플(팀/경기/스탯) fixture 추가
-  - 파서 필드 매핑 정확도 보강(누락/형식 변환 케이스)
-  - `teams/matches`는 실패 시 `abort`, `players/match_stats`는 `skip` 정책 검증
+  - `docs/crawl-002-ingest-report.md` 템플릿 기준으로 `pl` 실측 실행 로그/검증 JSON 수집
+  - `summary` 실제 카운트 채우기(추정치 금지)
+  - 이슈/잔여 리스크 확정 후 상태 `COMPLETED` 판정
 - DoD:
   - `make crawler-test` 통과
-  - `CRAWLER_DATA_SOURCE=pl` 기준 ingest 결과 리포트 문서화
+  - `CRAWLER_DATA_SOURCE=pl` 기준 ingest 결과 리포트 실측값 문서화 완료
 
 2. Web 품질 고도화 1단계: 핵심 사용자 플로우 E2E
 - 작업:
