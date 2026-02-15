@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { listMatches, listTeams } from "@/lib/api";
 import { formatDate, formatDateTime } from "@/lib/format";
@@ -11,16 +11,37 @@ type MatchFilter = {
   team_id?: number;
 };
 
+const FILTER_DEBOUNCE_MS = 300;
+const INITIAL_VISIBLE_MATCHES = 20;
+const LOAD_MORE_STEP = 20;
+
 export default function MatchesPage() {
   const [teams, setTeams] = useState<TeamItem[]>([]);
   const [matches, setMatches] = useState<MatchListItem[]>([]);
+  const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE_MATCHES);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const [roundInput, setRoundInput] = useState("");
   const [monthInput, setMonthInput] = useState("");
   const [teamInput, setTeamInput] = useState("");
-  const [activeFilter, setActiveFilter] = useState<MatchFilter>({});
+  const [debouncedFilter, setDebouncedFilter] = useState<MatchFilter>({});
+
+  const parsedFilter = useMemo<MatchFilter>(
+    () => ({
+      round: roundInput ? Number(roundInput) : undefined,
+      month: monthInput ? Number(monthInput) : undefined,
+      team_id: teamInput ? Number(teamInput) : undefined
+    }),
+    [roundInput, monthInput, teamInput]
+  );
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedFilter(parsedFilter);
+    }, FILTER_DEBOUNCE_MS);
+    return () => window.clearTimeout(timer);
+  }, [parsedFilter]);
 
   useEffect(() => {
     let active = true;
@@ -53,12 +74,13 @@ export default function MatchesPage() {
       setError(null);
       try {
         const data = await listMatches({
-          ...activeFilter,
+          ...debouncedFilter,
           limit: 100,
           offset: 0
         });
         if (active) {
           setMatches(data.items);
+          setVisibleCount(INITIAL_VISIBLE_MATCHES);
         }
       } catch (err) {
         if (active) {
@@ -78,14 +100,15 @@ export default function MatchesPage() {
     return () => {
       active = false;
     };
-  }, [activeFilter]);
+  }, [debouncedFilter]);
 
   const teamMap = useMemo(() => new Map(teams.map((team) => [team.team_id, team])), [teams]);
+  const visibleMatches = useMemo(() => matches.slice(0, visibleCount), [matches, visibleCount]);
 
   const groupedByDate = useMemo(() => {
     const groups: Record<string, MatchListItem[]> = {};
 
-    matches.forEach((match) => {
+    visibleMatches.forEach((match) => {
       const key = formatDate(match.match_date);
       if (!groups[key]) {
         groups[key] = [];
@@ -94,23 +117,13 @@ export default function MatchesPage() {
     });
 
     return Object.entries(groups);
-  }, [matches]);
-
-  function onSubmit(event: FormEvent<HTMLFormElement>): void {
-    event.preventDefault();
-
-    setActiveFilter({
-      round: roundInput ? Number(roundInput) : undefined,
-      month: monthInput ? Number(monthInput) : undefined,
-      team_id: teamInput ? Number(teamInput) : undefined
-    });
-  }
+  }, [visibleMatches]);
 
   return (
     <div className="stack">
       <h1 className="section-title">일정 / 결과</h1>
 
-      <form className="card filters" onSubmit={onSubmit}>
+      <div className="card filters">
         <select className="select" value={roundInput} onChange={(e) => setRoundInput(e.target.value)}>
           <option value="">라운드 전체</option>
           {Array.from({ length: 38 }, (_, i) => i + 1).map((round) => (
@@ -137,11 +150,7 @@ export default function MatchesPage() {
             </option>
           ))}
         </select>
-
-        <button className="button-link" type="submit">
-          필터 적용
-        </button>
-      </form>
+      </div>
 
       {loading && <div className="loading">경기 일정 로딩 중...</div>}
       {error && <div className="error">경기 일정 조회 실패: {error}</div>}
@@ -186,6 +195,21 @@ export default function MatchesPage() {
             })}
           </section>
         ))}
+
+      {!loading && !error && matches.length > visibleMatches.length && (
+        <div className="row">
+          <span className="muted">
+            {visibleMatches.length} / {matches.length} 경기 표시
+          </span>
+          <button
+            className="button-link"
+            type="button"
+            onClick={() => setVisibleCount((prev) => prev + LOAD_MORE_STEP)}
+          >
+            더 보기
+          </button>
+        </div>
+      )}
     </div>
   );
 }

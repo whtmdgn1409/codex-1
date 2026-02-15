@@ -99,9 +99,12 @@ Primary Focus: CRAWL-002 완료 전환 + 운영 가드레일 고정 + Web 성능
 
 ## C) In Progress
 - `P1-2`: Web 성능 개선 `WEB-Q-001` 적용 진행중 (매치 상세 탭 lazy render + dynamic import)
+- `P1-2`: Web 성능 개선 `WEB-Q-003` 적용 진행중 (matches 필터 debounce + 단계적 렌더)
 
 ## D) Done Log
 - 2026-02-14
+  - `WEB-Q-003` 1차 적용: `/matches` 필터 debounce(300ms) + 리스트 단계적 렌더(20개 단위 더보기)
+  - `WEB-Q-003` 적용 검증: `make web-lint`, `make web-build` 통과
   - `CRAWL-002` CI live validate 성공: run `22008172330`
   - `CRAWL-002` ingest report 상태 `COMPLETED` 전환
   - `CRAWL-002` matches 운영 완화 적용: 공식 fetch/파싱 실패 시 seed fallback(`PL_MATCHES_SEED_FALLBACK=1` default)
