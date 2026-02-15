@@ -45,9 +45,9 @@ make crawler-weekly   # 주배치 수동 실행
 - CI: `CI / api`, `CI / web-e2e`, `Crawler Live Validate`, `Lighthouse Baseline` 운영
 
 ## Next Priorities
-1. shadcn 기반 UI 리디자인(홈/매치/구단 핵심 화면)
-2. Netlify 배포 파이프라인(Preview/Production) 구축
-3. 브랜치 보호/PR-only 정책 최종 고정 점검
+1. Netlify 배포 파이프라인 실배포 검증(Preview/Production)
+2. 브랜치 보호/PR-only 정책 최종 고정 점검
+3. shadcn UI 리디자인 2차(standings/stats/detail)
 4. Lighthouse 회귀 관리 자동화(기준치/경보)
 5. `npm audit` 취약점 정리 계획 수립
 
@@ -57,6 +57,7 @@ make crawler-weekly   # 주배치 수동 실행
 - CRAWL-002 리포트: `docs/crawl-002-ingest-report.md`
 - CI 필수 체크 가이드: `docs/ci-required-checks.md`
 - 운영 설정/시크릿: `docs/operations-config.md`
+- 배포 설정: `netlify.toml`, `.github/workflows/netlify-deploy.yml`
 
 ## Contribution Rules
 - 브랜치: `feat/<scope>-<desc>`, `fix/<scope>-<desc>`

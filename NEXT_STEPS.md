@@ -13,6 +13,9 @@ Primary Focus: Web 제품화(디자인/배포) + 운영 가드레일 고정 + �
 ### Frontend
 - 완료: Next.js + TypeScript 기반 라우트 MVP
   - `/`, `/matches`, `/matches/[id]`, `/standings`, `/stats`, `/teams`, `/teams/[id]`
+- 완료: `WEB-DESIGN-001` shadcn 기반 리디자인 1차
+  - 공통 토큰/유틸(`tailwind`, `cn`) 및 UI primitives(`button/card/badge`) 적용
+  - 핵심 화면(`/`, `/matches`, `/teams`) 리프레시 및 반응형 정합성 확보
 - 완료: 핵심 품질 작업
   - `WEB-Q-001`: match detail 탭 lazy render + dynamic import
   - `WEB-Q-002`: home SSR prefetch(`getServerSideProps`) 전환
@@ -34,6 +37,9 @@ Primary Focus: Web 제품화(디자인/배포) + 운영 가드레일 고정 + �
 - 완료: `CI / api`, `CI / web-e2e` 필수 단계화
 - 완료: `Crawler Live Validate` 워크플로 추가
 - 완료: `Lighthouse Baseline` 워크플로 추가 + 리포트 아카이브
+- 완료: `DEPLOY-001` 배포 파이프라인 초안
+  - `netlify.toml` 추가(`apps/web` 기준 build 설정)
+  - `Netlify Deploy` 워크플로 추가(PR Preview + main Production)
 - 진행중: `main` PR-only/관리자 우회 금지 정책 최종 고정 점검
 
 ### Known Issues / Risks
@@ -44,32 +50,30 @@ Primary Focus: Web 제품화(디자인/배포) + 운영 가드레일 고정 + �
 ## B) Next Priorities
 
 ### P0
-1. UI 리디자인 트랙(shadcn)
-- 범위: 홈/매치/구단 핵심 화면을 shadcn 기반으로 재구성
-- DoD:
-  - 공통 UI 토큰/컴포넌트 정리(button/card/table/tabs)
-  - 모바일/데스크탑에서 레이아웃 일관성 확보
-  - 기존 기능/라우팅 회귀 없음
-
-2. 배포 트랙(Netlify)
+1. 배포 트랙(Netlify) 실배포 검증
 - 범위: Preview/Production 파이프라인 구성
 - DoD:
-  - Netlify 사이트 연결 및 빌드 설정 확정
-  - 환경변수 템플릿/운영 문서 정리
+  - Netlify 사이트 연결 및 GitHub Secrets 적용 검증
+  - 환경변수 템플릿/운영 문서 정리 및 실제 값 반영
   - PR Preview URL 확인 가능
 
-3. 운영 가드레일 최종 고정
+2. 운영 가드레일 최종 고정
 - DoD:
   - `main`에 PR-only + required checks 강제 상태 재확인
   - 관리자 우회 푸시 금지 상태 문서화
 
 ### P1
-1. Web 성능 회귀 관리
+1. UI 리디자인 트랙(shadcn) 2차
+- DoD:
+  - `/standings`, `/stats`, `/matches/[id]`, `/teams/[id]` shadcn 스타일 정렬
+  - legacy CSS 클래스 의존 제거 및 컴포넌트 단위 통일
+
+2. Web 성능 회귀 관리
 - DoD:
   - Lighthouse baseline 대비 개선/악화 비교표 자동 생성
   - 라우트별 fail threshold 정의(Performance/A11y)
 
-2. Crawler 품질 고도화
+3. Crawler 품질 고도화
 - DoD:
   - teams/matches 공식 파서 커버리지 확장
   - seed fallback 사용률/원인 리포트 항목 추가
@@ -81,10 +85,13 @@ Primary Focus: Web 제품화(디자인/배포) + 운영 가드레일 고정 + �
   - 업그레이드 계획 + 검증 체크리스트 수립
 
 ## C) In Progress
-- `WEB-DESIGN-001`: shadcn 전환 설계(컴포넌트 맵/우선 화면 정의)
-- `DEPLOY-001`: Netlify 배포 설정 초안(환경변수/빌드 명령/Preview 전략)
+- `DEPLOY-001`: Netlify 실배포 검증(Secrets 연결 + Preview URL 확인)
 
 ## D) Done Log
+- 2026-02-15
+  - `DEPLOY-001` 초안 반영: `netlify.toml`, `.github/workflows/netlify-deploy.yml`, 운영 문서/환경변수 템플릿 업데이트
+- 2026-02-15
+  - `WEB-DESIGN-001` 1차 완료: Tailwind + shadcn primitives 도입, `/`, `/matches`, `/teams` 리디자인, `make web-lint/web-build` 통과
 - 2026-02-15
   - 문서 정합화: `NEXT_STEPS.md`, `README.md` 현재 상태/다음 계획 동기화
 - 2026-02-14

@@ -1,0 +1,96 @@
+name: Netlify Deploy
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "apps/web/**"
+      - "netlify.toml"
+      - ".github/workflows/netlify-deploy.yml"
+  push:
+    branches: ["main"]
+    paths:
+      - "apps/web/**"
+      - "netlify.toml"
+      - ".github/workflows/netlify-deploy.yml"
+
+jobs:
+  deploy-preview:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install web dependencies
+        run: npm install
+        working-directory: apps/web
+
+      - name: Deploy preview
+        id: netlify_preview
+        run: |
+          npx netlify deploy \
+            --build \
+            --json \
+            --message "PR #${{ github.event.pull_request.number }} @ ${{ github.sha }}" > deploy.json
+          cat deploy.json
+          echo "deploy_url=$(node -e \"const fs=require('fs');const r=JSON.parse(fs.readFileSync('deploy.json','utf8'));console.log(r.deploy_url||'')\")" >> "$GITHUB_OUTPUT"
+          echo "logs_url=$(node -e \"const fs=require('fs');const r=JSON.parse(fs.readFileSync('deploy.json','utf8'));console.log(r.logs||'')\")" >> "$GITHUB_OUTPUT"
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+
+      - name: Comment preview url
+        if: steps.netlify_preview.outputs.deploy_url != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = [
+              "### Netlify Preview",
+              `- URL: ${process.env.DEPLOY_URL}`,
+              `- Logs: ${process.env.LOGS_URL || "N/A"}`
+            ].join("\n");
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body
+            });
+        env:
+          DEPLOY_URL: ${{ steps.netlify_preview.outputs.deploy_url }}
+          LOGS_URL: ${{ steps.netlify_preview.outputs.logs_url }}
+
+  deploy-production:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install web dependencies
+        run: npm install
+        working-directory: apps/web
+
+      - name: Deploy production
+        run: |
+          npx netlify deploy \
+            --build \
+            --prod \
+            --message "main @ ${{ github.sha }}"
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}

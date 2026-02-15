@@ -228,11 +228,11 @@ test.beforeEach(async ({ page }) => {
 test("home -> matches -> match detail flow", async ({ page }) => {
   await page.goto("/");
 
-  await expect(page.locator("h1.section-title")).toContainText("프리미어리그 정보 허브");
+  await expect(page.getByRole("heading", { level: 1, name: "프리미어리그 정보 허브" })).toBeVisible();
   await page.getByRole("link", { name: "일정/결과" }).click();
 
   await expect(page).toHaveURL(/\/matches$/);
-  await expect(page.locator("h1.section-title")).toContainText("일정 / 결과");
+  await expect(page.getByRole("heading", { level: 1, name: "일정 / 결과" })).toBeVisible();
 
   await page.getByRole("link", { name: "매치 리포트" }).first().click();
 
@@ -248,7 +248,7 @@ test("home -> matches -> match detail flow", async ({ page }) => {
 test("teams list -> team detail flow", async ({ page }) => {
   await page.goto("/teams");
 
-  await expect(page.locator("h1.section-title")).toContainText("구단");
+  await expect(page.getByRole("heading", { level: 1, name: "구단" })).toBeVisible();
   await page.getByRole("link", { name: /Arsenal FC/ }).first().click();
 
   await expect(page).toHaveURL(/\/teams\/1$/);

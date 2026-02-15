@@ -5,6 +5,7 @@
 - 로컬/서버 공통 필수:
   - `DB_URL`
   - `CRAWLER_DATA_SOURCE` (`sample` or `pl`)
+  - `NEXT_PUBLIC_API_BASE_URL`
 
 ## Premier League Source (`CRAWLER_DATA_SOURCE=pl`)
 - URL:
@@ -14,6 +15,8 @@
   - `PL_MATCH_STATS_URL`
 - HTTP:
   - `PL_HTTP_TIMEOUT_SECONDS`
+  - `PL_HTTP_VERIFY_SSL`
+  - `PL_HTTP_CA_FILE`
   - `PL_HTTP_RETRY_COUNT`
   - `PL_HTTP_RETRY_BACKOFF_SECONDS`
 - 파싱 정책:
@@ -42,6 +45,8 @@
 
 ### 1) Must Be GitHub Secrets
 - `BATCH_ALERT_SLACK_WEBHOOK`
+- `NETLIFY_AUTH_TOKEN`
+- `NETLIFY_SITE_ID`
 
 체크리스트:
 1. Repository Settings -> Secrets and variables -> Actions에 저장
@@ -56,6 +61,8 @@
 - `PL_MATCHES_URL`
 - `PL_MATCH_STATS_URL`
 - `PL_HTTP_TIMEOUT_SECONDS`
+- `PL_HTTP_VERIFY_SSL`
+- `PL_HTTP_CA_FILE`
 - `PL_HTTP_RETRY_COUNT`
 - `PL_HTTP_RETRY_BACKOFF_SECONDS`
 - `PL_PARSE_STRICT`
@@ -63,12 +70,28 @@
 - `PL_POLICY_PLAYERS`
 - `PL_POLICY_MATCHES`
 - `PL_POLICY_MATCH_STATS`
+- `NEXT_PUBLIC_SITE_URL`
 
 체크리스트:
 1. `CRAWLER_DATA_SOURCE=pl`인 경우 `PL_*_URL` 4개 모두 설정
-2. 운영 권장 정책(`teams/matches=abort`, `players/match_stats=skip`) 반영
-3. 파서 정책 변경 시 배치 실패/skip 로그를 함께 점검
-4. 민감값(토큰/쿠키/사설 엔드포인트)이 필요해지면 Variables가 아닌 Secrets로 승격
+2. SSL 오류 발생 시 `PL_HTTP_CA_FILE` 우선 지정 후 재검증
+3. `PL_HTTP_VERIFY_SSL=0`은 진단용 임시 설정으로만 사용
+4. 운영 권장 정책(`teams/matches=abort`, `players/match_stats=skip`) 반영
+5. 파서 정책 변경 시 배치 실패/skip 로그를 함께 점검
+6. 민감값(토큰/쿠키/사설 엔드포인트)이 필요해지면 Variables가 아닌 Secrets로 승격
+
+## Netlify Deploy Config
+- 워크플로: `.github/workflows/netlify-deploy.yml`
+- 빌드 설정: `netlify.toml` (`base=apps/web`, `command=npm run build`)
+- 배포 정책:
+  - PR: Deploy Preview 생성 후 PR 코멘트에 URL 기록
+  - `main` push: Production 배포
+
+체크리스트:
+1. Netlify에서 사이트 생성 후 `NETLIFY_AUTH_TOKEN`, `NETLIFY_SITE_ID`를 GitHub Secrets에 등록
+2. Netlify UI 환경변수에 `NEXT_PUBLIC_API_BASE_URL`(필수), `NEXT_PUBLIC_SITE_URL`(권장) 설정
+3. PR 생성 시 `Netlify Deploy / deploy-preview` 성공 및 Preview URL 코멘트 확인
+4. `main` 머지 후 `Netlify Deploy / deploy-production` 성공 확인
 
 ## Verification Checklist
 1. `make crawler-test`
