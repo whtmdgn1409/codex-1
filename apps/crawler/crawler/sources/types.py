@@ -16,7 +16,7 @@ class PlayerPayload(TypedDict):
     team_short_name: str
     name: str
     position: str
-    jersey_num: int
+    jersey_num: int | None
     nationality: str
     photo_url: str
 
@@ -41,3 +41,16 @@ class MatchStatPayload(TypedDict):
     shots_on_target: int
     fouls: int
     corners: int
+
+
+class StandingPayload(TypedDict):
+    team_short_name: str
+    rank: int
+    played: int
+    won: int
+    drawn: int
+    lost: int
+    goals_for: int
+    goals_against: int
+    goal_diff: int
+    points: int

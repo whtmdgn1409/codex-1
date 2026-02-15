@@ -32,6 +32,10 @@ Primary Focus: Web 제품화(디자인/배포) + 운영 가드레일 고정 + �
 - 완료: `CRAWL-002` CI live validate 성공 (`run 22008172330`)
 - 완료: `docs/crawl-002-ingest-report.md` 상태 `COMPLETED`
 - 완료: `BATCH-001`, `BATCH-002`, `BATCH-003` (일/주 스케줄 + 재시도 + Slack 알림)
+- 진행중: `CRAWL-003` API-Football 적재 확장(MVP)
+  - 완료 범위: `teams`, `players`, `matches`, `match_stats`, `standings` 수집/적재 구현 + 환경변수/문서/테스트 반영
+  - 잔여 범위: 운영 시크릿(`API_FOOTBALL_KEY`) 연결 후 live ingest 리허설 최종 완료
+  - 블로커: 로컬 환경 DNS 제약으로 API-Football 실호출 실패(Errno 8), CI runner에서 재검증 필요
 
 ### Infra/CI
 - 완료: `CI / api`, `CI / web-e2e` 필수 단계화
@@ -85,8 +89,18 @@ Primary Focus: Web 제품화(디자인/배포) + 운영 가드레일 고정 + �
 
 ## C) In Progress
 - `DEPLOY-001`: Vercel 실배포 검증(Secrets 연결 + Preview URL 확인)
+- `CRAWL-003`: 운영 시크릿 연결 후 API-Football live ingest 리허설
 
 ## D) Done Log
+- 2026-02-15
+  - `CRAWL-003` 2차: API-Football `players`, `match_stats` 파서 구현 및 정책(`skip/abort`) 반영
+  - crawler schema 보강: `player_season_stats`, `match_events` sqlite 테이블 추가(API 호환)
+  - API-DB 연계 검증 스크립트 `scripts/verify_api_db_flow.py` 추가 (`make verify-api-flow` 통과)
+  - API-Football live 리허설 시도 결과: 로컬 DNS 제약으로 실패, CI runner 재시도 필요
+- 2026-02-15
+  - `CRAWL-003` 1차: `ApiFootballDataSource` 추가, teams/matches/standings 적재 MVP 구현
+  - `ingest-standings` CLI/배치 경로 추가, `PL_POLICY_STANDINGS`/`API_FOOTBALL_*` 환경변수 및 운영 문서 반영
+  - crawler 테스트 30건 통과(`make crawler-test`)
 - 2026-02-15
   - `DEPLOY-001` Vercel 전환: `.github/workflows/vercel-deploy.yml` 추가, Netlify 설정 제거, 운영 문서/우선순위 갱신
 - 2026-02-15

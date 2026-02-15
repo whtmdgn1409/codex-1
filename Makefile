@@ -1,4 +1,4 @@
-.PHONY: setup lint test test-unit test-openapi test-integration dev web-setup web-dev web-build web-lint web-e2e web-lighthouse crawler-setup crawler-ingest crawler-daily crawler-weekly crawler-summary crawler-validate crawler-test
+.PHONY: setup lint test test-unit test-openapi test-integration dev web-setup web-dev web-build web-lint web-e2e web-lighthouse crawler-setup crawler-ingest crawler-daily crawler-weekly crawler-summary crawler-validate crawler-test verify-api-flow
 
 setup:
 	python3 -m pip install -r apps/api/requirements.txt
@@ -61,3 +61,6 @@ crawler-validate:
 
 crawler-test:
 	PYTHONPATH=apps/crawler python3 -m pytest -q apps/crawler/tests
+
+verify-api-flow:
+	python3 scripts/verify_api_db_flow.py --source sample

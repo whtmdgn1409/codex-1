@@ -13,7 +13,7 @@ from crawler.logging_utils import log_event
 from crawler.sources.base import DataSource
 from crawler.sources.matches_seed import load_seed_matches
 from crawler.sources.teams_seed import load_seed_teams
-from crawler.sources.types import MatchPayload, MatchStatPayload, PlayerPayload, TeamPayload
+from crawler.sources.types import MatchPayload, MatchStatPayload, PlayerPayload, StandingPayload, TeamPayload
 
 Dataset = str
 
@@ -508,6 +508,10 @@ class PremierLeagueDataSource(DataSource):
             )
         log_event("INFO", "pl.parse.match_stats", rows=len(payload))
         return payload
+
+    def load_standings(self) -> list[StandingPayload]:
+        log_event("INFO", "pl.parse.standings.skip", reason="unsupported_dataset_in_pl_source")
+        return []
 
     def _fetch_with_retry(self, url: str, event_name: str) -> str:
         last_error: Exception | None = None

@@ -4,7 +4,7 @@
 - 기준 템플릿: `.env.example`
 - 로컬/서버 공통 필수:
   - `DB_URL`
-  - `CRAWLER_DATA_SOURCE` (`sample` or `pl`)
+  - `CRAWLER_DATA_SOURCE` (`sample` or `pl` or `api_football`)
   - `NEXT_PUBLIC_API_BASE_URL`
 
 ## Premier League Source (`CRAWLER_DATA_SOURCE=pl`)
@@ -25,12 +25,29 @@
   - `PL_POLICY_PLAYERS` (`abort|skip`)
   - `PL_POLICY_MATCHES` (`abort|skip`)
   - `PL_POLICY_MATCH_STATS` (`abort|skip`)
+  - `PL_POLICY_STANDINGS` (`abort|skip`)
 
 권장 운영값:
 - `PL_POLICY_TEAMS=abort`
 - `PL_POLICY_MATCHES=abort`
 - `PL_POLICY_PLAYERS=skip`
 - `PL_POLICY_MATCH_STATS=skip`
+- `PL_POLICY_STANDINGS=abort`
+
+## API-Football Source (`CRAWLER_DATA_SOURCE=api_football`)
+- 엔드포인트/리그:
+  - `API_FOOTBALL_BASE_URL` (기본 `https://v3.football.api-sports.io`)
+  - `API_FOOTBALL_LEAGUE_ID` (기본 `39`, Premier League)
+  - `API_FOOTBALL_SEASON` (예: `2025`)
+- 인증:
+  - `API_FOOTBALL_KEY` (필수, Secret)
+  - `API_FOOTBALL_HOST` (옵션)
+- 정책:
+  - `PL_POLICY_TEAMS`
+  - `PL_POLICY_MATCHES`
+  - `PL_POLICY_STANDINGS`
+  - `PL_POLICY_PLAYERS`
+  - `PL_POLICY_MATCH_STATS`
 
 ## Batch Retry/Alert
 - 재시도:
@@ -48,6 +65,7 @@
 - `VERCEL_TOKEN`
 - `VERCEL_ORG_ID`
 - `VERCEL_PROJECT_ID`
+- `API_FOOTBALL_KEY`
 
 체크리스트:
 1. Repository Settings -> Secrets and variables -> Actions에 저장
@@ -71,6 +89,11 @@
 - `PL_POLICY_PLAYERS`
 - `PL_POLICY_MATCHES`
 - `PL_POLICY_MATCH_STATS`
+- `PL_POLICY_STANDINGS`
+- `API_FOOTBALL_BASE_URL`
+- `API_FOOTBALL_HOST`
+- `API_FOOTBALL_LEAGUE_ID`
+- `API_FOOTBALL_SEASON`
 - `NEXT_PUBLIC_SITE_URL`
 
 체크리스트:

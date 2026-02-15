@@ -1,7 +1,7 @@
 # Crawler Service
 
 `CRAWL-001` 초기 수집 파이프라인입니다.
-샘플 데이터 소스 기반으로 `teams`, `players`, `matches`, `match_stats`를 멱등 업서트합니다.
+샘플 데이터 소스 기반으로 `teams`, `players`, `matches`, `match_stats`, `standings`를 멱등 업서트합니다.
 
 ## Setup
 ```bash
@@ -13,6 +13,7 @@ make crawler-setup
 make crawler-ingest
 make crawler-summary
 make crawler-validate
+make verify-api-flow
 ```
 
 ## Batch Runner (Skeleton)
@@ -36,6 +37,7 @@ make crawler-weekly  # BATCH-002 주배치(수동)
 데이터 소스는 `CRAWLER_DATA_SOURCE`로 제어합니다.
 - `sample` (기본): 내장 샘플 데이터
 - `pl`: Premier League 공식 사이트 POC 파서
+- `api_football`: API-Football 기반 적재(teams/players/matches/match_stats/standings)
 
 `pl` 사용 시 URL/재시도 설정:
 ```bash
@@ -55,12 +57,32 @@ PL_POLICY_TEAMS=abort
 PL_POLICY_PLAYERS=skip
 PL_POLICY_MATCHES=abort
 PL_POLICY_MATCH_STATS=skip
+PL_POLICY_STANDINGS=abort
 PL_TEAMS_SEED_FALLBACK=1
 PL_MATCHES_SEED_FALLBACK=1
 BATCH_RETRY_COUNT=3
 BATCH_RETRY_BACKOFF_SECONDS=2
 # 선택: Slack incoming webhook
 # BATCH_ALERT_SLACK_WEBHOOK=https://hooks.slack.com/services/xxx/yyy/zzz
+```
+
+`api_football` 사용 시:
+```bash
+CRAWLER_DATA_SOURCE=api_football
+API_FOOTBALL_BASE_URL=https://v3.football.api-sports.io
+API_FOOTBALL_KEY=your_api_key
+API_FOOTBALL_LEAGUE_ID=39
+API_FOOTBALL_SEASON=2025
+PL_POLICY_TEAMS=abort
+PL_POLICY_MATCHES=abort
+PL_POLICY_STANDINGS=abort
+PL_POLICY_PLAYERS=skip
+PL_POLICY_MATCH_STATS=skip
+```
+
+API-Football live 리허설(로컬 sqlite + API 응답 검증):
+```bash
+API_FOOTBALL_KEY=*** python3 scripts/verify_api_db_flow.py --source api_football
 ```
 
 파서 실패 정책:
@@ -95,6 +117,7 @@ DB_URL=mysql+pymysql://epl_user:change_me@localhost:3306/epl_hub PYTHONPATH=apps
 - `ingest-teams`: 팀만 적재
 - `ingest-players`: 선수만 적재
 - `ingest-matches`: 경기만 적재
+- `ingest-standings`: 순위만 적재
 - `summary`: 테이블별 카운트 출력
 - `validate_pl_ingest.py`: PL 모드 적재 + 검증 리포트(JSON) 출력
 

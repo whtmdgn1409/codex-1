@@ -6,7 +6,7 @@ from collections.abc import Callable
 from crawler.alerts import send_failure_alert
 from crawler.config import load_batch_policy_config, load_db_config
 from crawler.db import Database
-from crawler.ingest import ingest_all, summary, upsert_matches, upsert_teams
+from crawler.ingest import ingest_all, summary, upsert_matches, upsert_standings, upsert_teams
 from crawler.logging_utils import log_event
 from crawler.sources import get_data_source
 
@@ -63,3 +63,4 @@ def _run_weekly(db: Database) -> None:
     source = get_data_source()
     upsert_teams(db, source.load_teams())
     upsert_matches(db, source.load_matches())
+    upsert_standings(db, source.load_standings())

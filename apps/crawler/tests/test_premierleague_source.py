@@ -30,8 +30,14 @@ def _source_config() -> SourceConfig:
         dataset_policy_players="skip",
         dataset_policy_matches="skip",
         dataset_policy_match_stats="skip",
+        dataset_policy_standings="skip",
         teams_seed_fallback=True,
         matches_seed_fallback=True,
+        api_football_base_url="https://v3.football.api-sports.io",
+        api_football_key="test-key",
+        api_football_host=None,
+        api_football_league_id=39,
+        api_football_season=2025,
     )
 
 

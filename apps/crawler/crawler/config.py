@@ -33,8 +33,14 @@ class SourceConfig:
     dataset_policy_players: str
     dataset_policy_matches: str
     dataset_policy_match_stats: str
+    dataset_policy_standings: str
     teams_seed_fallback: bool
     matches_seed_fallback: bool
+    api_football_base_url: str
+    api_football_key: str
+    api_football_host: str | None
+    api_football_league_id: int
+    api_football_season: int
 
 
 @dataclass
@@ -111,8 +117,14 @@ def load_source_config() -> SourceConfig:
         dataset_policy_players=os.getenv("PL_POLICY_PLAYERS", "skip").strip().lower(),
         dataset_policy_matches=os.getenv("PL_POLICY_MATCHES", "abort").strip().lower(),
         dataset_policy_match_stats=os.getenv("PL_POLICY_MATCH_STATS", "skip").strip().lower(),
+        dataset_policy_standings=os.getenv("PL_POLICY_STANDINGS", "abort").strip().lower(),
         teams_seed_fallback=teams_seed_fallback_raw in {"1", "true", "yes", "on"},
         matches_seed_fallback=matches_seed_fallback_raw in {"1", "true", "yes", "on"},
+        api_football_base_url=os.getenv("API_FOOTBALL_BASE_URL", "https://v3.football.api-sports.io"),
+        api_football_key=os.getenv("API_FOOTBALL_KEY", "").strip(),
+        api_football_host=(os.getenv("API_FOOTBALL_HOST", "").strip() or None),
+        api_football_league_id=int(os.getenv("API_FOOTBALL_LEAGUE_ID", "39")),
+        api_football_season=int(os.getenv("API_FOOTBALL_SEASON", "2025")),
     )
 
 

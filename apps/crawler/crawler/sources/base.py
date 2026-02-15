@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Protocol
 
-from crawler.sources.types import MatchPayload, MatchStatPayload, PlayerPayload, TeamPayload
+from crawler.sources.types import MatchPayload, MatchStatPayload, PlayerPayload, StandingPayload, TeamPayload
 
 
 class DataSource(Protocol):
@@ -16,4 +16,7 @@ class DataSource(Protocol):
         ...
 
     def load_match_stats(self) -> list[MatchStatPayload]:
+        ...
+
+    def load_standings(self) -> list[StandingPayload]:
         ...

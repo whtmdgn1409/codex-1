@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from crawler.db import Database
+from crawler.logging_utils import log_event
 from crawler.sources import get_data_source
-from crawler.sources.types import MatchPayload, MatchStatPayload, PlayerPayload, TeamPayload
+from crawler.sources.types import MatchPayload, MatchStatPayload, PlayerPayload, StandingPayload, TeamPayload
 
 
 def upsert_teams(db: Database, teams: list[TeamPayload] | None = None) -> None:
@@ -60,7 +61,10 @@ def upsert_players(db: Database, players: list[PlayerPayload] | None = None) -> 
     team_map = _team_id_map(db)
 
     for player in players:
-        team_id = team_map[player["team_short_name"]]
+        team_id = team_map.get(player["team_short_name"])
+        if team_id is None:
+            log_event("WARNING", "ingest.players.skip_unknown_team", team_short_name=player["team_short_name"], player_id=player["player_id"])
+            continue
 
         if db.config.engine == "sqlite":
             db.execute(
@@ -85,6 +89,14 @@ def upsert_players(db: Database, players: list[PlayerPayload] | None = None) -> 
                     player["photo_url"],
                 ),
             )
+            db.execute(
+                """
+                INSERT INTO player_season_stats(player_id, goals, assists, attack_points, clean_sheets)
+                VALUES(?, 0, 0, 0, 0)
+                ON CONFLICT(player_id) DO NOTHING
+                """,
+                (player["player_id"],),
+            )
         else:
             db.execute(
                 """
@@ -108,6 +120,13 @@ def upsert_players(db: Database, players: list[PlayerPayload] | None = None) -> 
                     player["photo_url"],
                 ),
             )
+            db.execute(
+                """
+                INSERT IGNORE INTO player_season_stats(player_id, goals, assists, attack_points, clean_sheets)
+                VALUES(%s, 0, 0, 0, 0)
+                """,
+                (player["player_id"],),
+            )
 
 
 def upsert_matches(db: Database, matches: list[MatchPayload] | None = None) -> None:
@@ -116,8 +135,16 @@ def upsert_matches(db: Database, matches: list[MatchPayload] | None = None) -> N
     team_map = _team_id_map(db)
 
     for match in matches:
-        home_team_id = team_map[match["home_team_short_name"]]
-        away_team_id = team_map[match["away_team_short_name"]]
+        home_team_id = team_map.get(match["home_team_short_name"])
+        away_team_id = team_map.get(match["away_team_short_name"])
+        if home_team_id is None or away_team_id is None:
+            log_event(
+                "WARNING",
+                "ingest.matches.skip_unknown_team",
+                home_team_short_name=match["home_team_short_name"],
+                away_team_short_name=match["away_team_short_name"],
+            )
+            continue
 
         if db.config.engine == "sqlite":
             db.execute(
@@ -175,11 +202,31 @@ def upsert_match_stats(db: Database, match_stats: list[MatchStatPayload] | None 
     match_map = _match_id_map(db)
 
     for stat in match_stats:
-        home_team_id = team_map[stat["home_team_short_name"]]
-        away_team_id = team_map[stat["away_team_short_name"]]
+        home_team_id = team_map.get(stat["home_team_short_name"])
+        away_team_id = team_map.get(stat["away_team_short_name"])
+        if home_team_id is None or away_team_id is None:
+            log_event(
+                "WARNING",
+                "ingest.match_stats.skip_unknown_match_team",
+                home_team_short_name=stat["home_team_short_name"],
+                away_team_short_name=stat["away_team_short_name"],
+            )
+            continue
         key = (int(stat["round"]), home_team_id, away_team_id)
-        match_id = match_map[key]
-        team_id = team_map[stat["team_short_name"]]
+        match_id = match_map.get(key)
+        if match_id is None:
+            log_event(
+                "WARNING",
+                "ingest.match_stats.skip_missing_match",
+                round=stat["round"],
+                home_team_short_name=stat["home_team_short_name"],
+                away_team_short_name=stat["away_team_short_name"],
+            )
+            continue
+        team_id = team_map.get(stat["team_short_name"])
+        if team_id is None:
+            log_event("WARNING", "ingest.match_stats.skip_unknown_team", team_short_name=stat["team_short_name"])
+            continue
 
         if db.config.engine == "sqlite":
             db.execute(
@@ -227,17 +274,88 @@ def upsert_match_stats(db: Database, match_stats: list[MatchStatPayload] | None 
             )
 
 
+def upsert_standings(db: Database, standings: list[StandingPayload] | None = None) -> None:
+    if standings is None:
+        standings = get_data_source().load_standings()
+    team_map = _team_id_map(db)
+
+    for item in standings:
+        team_id = team_map.get(item["team_short_name"])
+        if team_id is None:
+            continue
+
+        if db.config.engine == "sqlite":
+            db.execute(
+                """
+                INSERT INTO standings(team_id, rank, played, won, drawn, lost, goals_for, goals_against, goal_diff, points)
+                VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(team_id) DO UPDATE SET
+                  rank=excluded.rank,
+                  played=excluded.played,
+                  won=excluded.won,
+                  drawn=excluded.drawn,
+                  lost=excluded.lost,
+                  goals_for=excluded.goals_for,
+                  goals_against=excluded.goals_against,
+                  goal_diff=excluded.goal_diff,
+                  points=excluded.points
+                """,
+                (
+                    team_id,
+                    item["rank"],
+                    item["played"],
+                    item["won"],
+                    item["drawn"],
+                    item["lost"],
+                    item["goals_for"],
+                    item["goals_against"],
+                    item["goal_diff"],
+                    item["points"],
+                ),
+            )
+        else:
+            db.execute(
+                """
+                INSERT INTO standings(team_id, rank, played, won, drawn, lost, goals_for, goals_against, goal_diff, points)
+                VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ON DUPLICATE KEY UPDATE
+                  rank=VALUES(rank),
+                  played=VALUES(played),
+                  won=VALUES(won),
+                  drawn=VALUES(drawn),
+                  lost=VALUES(lost),
+                  goals_for=VALUES(goals_for),
+                  goals_against=VALUES(goals_against),
+                  goal_diff=VALUES(goal_diff),
+                  points=VALUES(points)
+                """,
+                (
+                    team_id,
+                    item["rank"],
+                    item["played"],
+                    item["won"],
+                    item["drawn"],
+                    item["lost"],
+                    item["goals_for"],
+                    item["goals_against"],
+                    item["goal_diff"],
+                    item["points"],
+                ),
+            )
+
+
 def ingest_all(db: Database) -> None:
     source = get_data_source()
     upsert_teams(db, source.load_teams())
     upsert_players(db, source.load_players())
     upsert_matches(db, source.load_matches())
     upsert_match_stats(db, source.load_match_stats())
+    upsert_standings(db, source.load_standings())
 
 
 def summary(db: Database) -> dict[str, int]:
     counts: dict[str, int] = {}
-    for table in ("teams", "players", "matches", "match_stats"):
+    for table in ("teams", "players", "matches", "match_stats", "standings"):
         row = db.fetchone(f"SELECT COUNT(*) AS cnt FROM {table}")
         counts[table] = int(row["cnt"]) if row else 0
     return counts

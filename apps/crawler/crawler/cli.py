@@ -5,14 +5,14 @@ import json
 
 from crawler.config import load_db_config
 from crawler.db import Database
-from crawler.ingest import ingest_all, summary, upsert_matches, upsert_players, upsert_teams
+from crawler.ingest import ingest_all, summary, upsert_matches, upsert_players, upsert_standings, upsert_teams
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="EPL crawler ingestion CLI")
     parser.add_argument(
         "command",
-        choices=["ingest-all", "ingest-teams", "ingest-players", "ingest-matches", "summary"],
+        choices=["ingest-all", "ingest-teams", "ingest-players", "ingest-matches", "ingest-standings", "summary"],
         help="command to execute",
     )
 
@@ -35,6 +35,9 @@ def main() -> None:
             db.commit()
         elif args.command == "ingest-matches":
             upsert_matches(db)
+            db.commit()
+        elif args.command == "ingest-standings":
+            upsert_standings(db)
             db.commit()
 
         print(json.dumps(summary(db), ensure_ascii=False))

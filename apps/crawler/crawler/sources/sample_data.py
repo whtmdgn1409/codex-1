@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from crawler.sources.base import DataSource
-from crawler.sources.types import MatchPayload, MatchStatPayload, PlayerPayload, TeamPayload
+from crawler.sources.types import MatchPayload, MatchStatPayload, PlayerPayload, StandingPayload, TeamPayload
 
 
 TEAMS: list[TeamPayload] = [
@@ -104,6 +104,45 @@ MATCH_STATS: list[MatchStatPayload] = [
     },
 ]
 
+STANDINGS: list[StandingPayload] = [
+    {
+        "team_short_name": "ARS",
+        "rank": 1,
+        "played": 24,
+        "won": 18,
+        "drawn": 4,
+        "lost": 2,
+        "goals_for": 55,
+        "goals_against": 20,
+        "goal_diff": 35,
+        "points": 58,
+    },
+    {
+        "team_short_name": "LIV",
+        "rank": 2,
+        "played": 24,
+        "won": 17,
+        "drawn": 5,
+        "lost": 2,
+        "goals_for": 53,
+        "goals_against": 22,
+        "goal_diff": 31,
+        "points": 56,
+    },
+    {
+        "team_short_name": "CHE",
+        "rank": 3,
+        "played": 24,
+        "won": 15,
+        "drawn": 6,
+        "lost": 3,
+        "goals_for": 49,
+        "goals_against": 24,
+        "goal_diff": 25,
+        "points": 51,
+    },
+]
+
 
 class SampleDataSource(DataSource):
     def load_teams(self) -> list[TeamPayload]:
@@ -117,3 +156,6 @@ class SampleDataSource(DataSource):
 
     def load_match_stats(self) -> list[MatchStatPayload]:
         return list(MATCH_STATS)
+
+    def load_standings(self) -> list[StandingPayload]:
+        return list(STANDINGS)

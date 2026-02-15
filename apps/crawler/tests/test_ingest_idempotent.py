@@ -38,3 +38,4 @@ def test_ingest_all_is_idempotent(tmp_path: Path) -> None:
     assert first["players"] >= 1
     assert first["matches"] >= 1
     assert first["match_stats"] >= 1
+    assert first["standings"] >= 1
