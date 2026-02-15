@@ -84,6 +84,11 @@
   - PR: Vercel Preview 자동 생성
   - `main`: Vercel Production 자동 배포
 
+현재 운영값:
+- Public URL: `https://codex-1-liard.vercel.app/`
+- `NEXT_PUBLIC_SITE_URL`: `https://codex-1-liard.vercel.app/`
+- Custom Domain: 미연결
+
 체크리스트:
 1. Vercel Dashboard에서 `whtmdgn1409/codex-1` 저장소 연결
 2. Root Directory를 `apps/web`로 설정
