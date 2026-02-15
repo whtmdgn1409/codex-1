@@ -113,6 +113,30 @@ def test_premierleague_json_fallback_for_matches_from_next_data_fixture(monkeypa
     assert matches[1]["home_score"] is None
 
 
+def test_premierleague_parse_teams_and_matches_from_direct_json_api_fixture(monkeypatch: pytest.MonkeyPatch) -> None:
+    source = PremierLeagueDataSource(_source_config())
+
+    def fake_http_get(url: str) -> str:
+        if "teams" in url:
+            return _fixture_html("teams_bootstrap_api.json")
+        if "matches" in url:
+            return _fixture_html("matches_fixtures_api.json")
+        return "<html><body></body></html>"
+
+    monkeypatch.setattr(source, "_http_get", fake_http_get)
+
+    teams = source.load_teams()
+    matches = source.load_matches()
+
+    assert len(teams) == 3
+    assert teams[0]["short_name"] == "ARS"
+    assert len(matches) == 2
+    assert matches[0]["home_team_short_name"] == "ARS"
+    assert matches[0]["away_team_short_name"] == "LIV"
+    assert matches[0]["status"] == "FINISHED"
+    assert matches[1]["status"] == "SCHEDULED"
+
+
 def test_premierleague_json_fallback_for_match_stats_nested_fixture(monkeypatch: pytest.MonkeyPatch) -> None:
     source = PremierLeagueDataSource(_source_config())
     monkeypatch.setattr(source, "_http_get", lambda _: _fixture_html("match_stats_official.html"))

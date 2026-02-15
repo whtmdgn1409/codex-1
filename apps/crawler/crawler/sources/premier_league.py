@@ -18,6 +18,7 @@ from crawler.sources.types import MatchPayload, MatchStatPayload, PlayerPayload,
 Dataset = str
 
 TEAM_ALIASES: dict[str, list[str]] = {
+    "team_id": ["team_id", "id"],
     "name": ["name", "club", "team", "team_name", "club_name"],
     "short_name": ["short_name", "abbr", "short", "code", "team_short_name", "abbreviation", "shortname"],
     "logo_url": ["logo_url", "logo", "crest", "image_url", "crest_url", "badge", "badge_url"],
@@ -36,8 +37,10 @@ PLAYER_ALIASES: dict[str, list[str]] = {
 }
 
 MATCH_ALIASES: dict[str, list[str]] = {
-    "round": ["round", "matchweek", "match_week", "week", "gw"],
+    "round": ["round", "matchweek", "match_week", "week", "gw", "event"],
     "match_date": ["match_date", "date", "kickoff", "kickoff_time", "kickoff_date", "kickoff_datetime", "kickoff_utc", "kickoff_label"],
+    "home_team_id": ["home_team_id", "team_h", "home_id"],
+    "away_team_id": ["away_team_id", "team_a", "away_id"],
     "home_team_short_name": [
         "home_team_short_name",
         "home_team_shortname",
@@ -54,9 +57,9 @@ MATCH_ALIASES: dict[str, list[str]] = {
         "away_team_code",
         "away",
     ],
-    "home_score": ["home_score", "home_goals", "score_home"],
-    "away_score": ["away_score", "away_goals", "score_away"],
-    "status": ["status", "match_status", "result_status", "state"],
+    "home_score": ["home_score", "home_goals", "score_home", "team_h_score"],
+    "away_score": ["away_score", "away_goals", "score_away", "team_a_score"],
+    "status": ["status", "match_status", "result_status", "state", "finished"],
 }
 
 MATCH_STATS_ALIASES: dict[str, list[str]] = {
@@ -267,6 +270,7 @@ class _AnchorParser(HTMLParser):
 class PremierLeagueDataSource(DataSource):
     def __init__(self, config: SourceConfig) -> None:
         self.config = config
+        self._team_id_to_short: dict[int, str] = {}
 
     def load_teams(self) -> list[TeamPayload]:
         html = self._fetch_html_for_dataset("teams", self.config.teams_url, "pl.fetch.teams")
@@ -298,6 +302,9 @@ class PremierLeagueDataSource(DataSource):
         for row in records:
             name = row["name"].strip()
             short_name = row.get("short_name", "").strip() or _derive_short_name(name)
+            team_id = _safe_int(row.get("team_id", ""))
+            if team_id is not None and team_id > 0:
+                self._team_id_to_short[team_id] = short_name
             payload.append(
                 {
                     "name": name,
@@ -403,11 +410,19 @@ class PremierLeagueDataSource(DataSource):
             self._handle_dataset_issue("matches", reason=f"fetch_failed:{type(exc).__name__}")
             return []
 
-        records = self._extract_from_table(html=html, aliases=MATCH_ALIASES, required=["round", "match_date", "home_team_short_name", "away_team_short_name", "status"])
+        records = self._extract_from_table(
+            html=html,
+            aliases=MATCH_ALIASES,
+            required=["round", "match_date"],
+        )
         if records:
             log_event("INFO", "pl.parse.strategy", dataset="matches", strategy="table", rows=len(records))
         if not records:
-            records = self._extract_from_json(html=html, aliases=MATCH_ALIASES, required=["round", "match_date", "home_team_short_name", "away_team_short_name", "status"])
+            records = self._extract_from_json(
+                html=html,
+                aliases=MATCH_ALIASES,
+                required=["round", "match_date"],
+            )
             if records:
                 log_event("INFO", "pl.parse.strategy", dataset="matches", strategy="json", rows=len(records))
         if not records and self.config.matches_seed_fallback:
@@ -419,15 +434,38 @@ class PremierLeagueDataSource(DataSource):
 
         payload: list[MatchPayload] = []
         for row in records:
+            home_short = row.get("home_team_short_name", "").strip()
+            away_short = row.get("away_team_short_name", "").strip()
+            if not home_short:
+                home_team_id = _safe_int(row.get("home_team_id", ""))
+                if home_team_id is not None:
+                    home_short = self._team_id_to_short.get(home_team_id, "")
+            if not away_short:
+                away_team_id = _safe_int(row.get("away_team_id", ""))
+                if away_team_id is not None:
+                    away_short = self._team_id_to_short.get(away_team_id, "")
+            if not home_short or not away_short:
+                continue
+
+            status_raw = row.get("status", "").strip().upper()
+            if status_raw in {"TRUE", "1", "YES"}:
+                status = "FINISHED"
+            elif status_raw in {"FALSE", "0", "NO", ""}:
+                status = "SCHEDULED"
+            elif "FIN" in status_raw:
+                status = "FINISHED"
+            else:
+                status = "SCHEDULED"
+
             payload.append(
                 {
                     "round": _safe_int(row["round"]) or 0,
                     "match_date": row["match_date"],
-                    "home_team_short_name": row["home_team_short_name"],
-                    "away_team_short_name": row["away_team_short_name"],
+                    "home_team_short_name": home_short,
+                    "away_team_short_name": away_short,
                     "home_score": _safe_int(row.get("home_score", "")),
                     "away_score": _safe_int(row.get("away_score", "")),
-                    "status": row["status"],
+                    "status": status,
                 }
             )
         log_event("INFO", "pl.parse.matches", rows=len(payload))
@@ -582,9 +620,15 @@ class PremierLeagueDataSource(DataSource):
         return []
 
     def _extract_json_candidates(self, html: str) -> list[object]:
+        stripped = html.strip()
+        values: list[object] = []
+        if stripped.startswith("{") or stripped.startswith("["):
+            direct = self._json_load(stripped)
+            if direct is not None:
+                values.append(direct)
+
         parser = _ScriptJsonParser()
         parser.feed(html)
-        values: list[object] = []
 
         for block in parser.json_blocks:
             obj = self._json_load(block)

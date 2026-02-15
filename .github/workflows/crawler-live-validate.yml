@@ -36,6 +36,8 @@ jobs:
           mkdir -p docs/reports
           PYTHONPATH=apps/crawler python3 apps/crawler/scripts/validate_pl_ingest.py \
             --env DB_URL=sqlite:////tmp/crawl002_live_ci.db \
+            --env PL_TEAMS_URL=https://fantasy.premierleague.com/api/bootstrap-static/ \
+            --env PL_MATCHES_URL=https://fantasy.premierleague.com/api/fixtures/ \
             --env PL_TEAMS_SEED_FALLBACK=0 \
             --env PL_MATCHES_SEED_FALLBACK=0 \
             --output-json docs/reports/crawl-002-validate-live-ci.json
