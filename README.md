@@ -2,6 +2,10 @@
 
 프리미어리그 경기/순위/선수 통계를 일배치로 수집해 제공하는 웹서비스입니다.
 
+## Live Service
+- Current Vercel URL: `https://codex-1-liard.vercel.app/`
+- Custom Domain: 미연결 (도메인 확보 후 Vercel에 추가 예정)
+
 ## Repository Layout
 ```text
 apps/
