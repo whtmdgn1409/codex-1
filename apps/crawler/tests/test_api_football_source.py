@@ -224,3 +224,19 @@ def test_api_football_honors_skip_policy_for_players_and_match_stats(monkeypatch
 
     assert source.load_players() == []
     assert source.load_match_stats() == []
+
+
+def test_api_football_builds_standings_from_matches_when_empty(monkeypatch: pytest.MonkeyPatch) -> None:
+    source = ApiFootballDataSource(_source_config())
+
+    def fake_http_get_json(*, path: str, params: dict[str, object]) -> dict:
+        if path == "/standings":
+            return {"response": []}
+        return _fake_response(path)
+
+    monkeypatch.setattr(source, "_http_get_json", fake_http_get_json)
+    standings = source.load_standings()
+
+    assert len(standings) == 2
+    assert standings[0]["team_short_name"] == "ARS"
+    assert standings[0]["points"] == 3

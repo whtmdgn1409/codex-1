@@ -279,11 +279,11 @@ class ApiFootballDataSource(DataSource):
 
         response_rows = payload.get("response", [])
         if not response_rows:
-            return []
+            return self._build_standings_from_matches()
 
         standings_groups = response_rows[0].get("league", {}).get("standings", [])
         if not standings_groups:
-            return []
+            return self._build_standings_from_matches()
 
         items: list[StandingPayload] = []
         for row in standings_groups[0]:
@@ -317,6 +317,9 @@ class ApiFootballDataSource(DataSource):
                     "points": _safe_int(row.get("points")) or 0,
                 }
             )
+
+        if not items:
+            return self._build_standings_from_matches()
 
         log_event("INFO", "api_football.parse.standings", rows=len(items))
         return items
@@ -355,6 +358,91 @@ class ApiFootballDataSource(DataSource):
                 continue
             items[key] = row.get("value")
         return items
+
+    def _build_standings_from_matches(self) -> list[StandingPayload]:
+        matches = self.load_matches()
+        totals: dict[str, dict[str, int]] = {
+            short_name: {
+                "played": 0,
+                "won": 0,
+                "drawn": 0,
+                "lost": 0,
+                "goals_for": 0,
+                "goals_against": 0,
+                "points": 0,
+            }
+            for short_name in self._team_id_to_short.values()
+        }
+
+        for match in matches:
+            if match["status"] != "FINISHED":
+                continue
+            home_short = match["home_team_short_name"]
+            away_short = match["away_team_short_name"]
+            home_score = match["home_score"]
+            away_score = match["away_score"]
+            if home_score is None or away_score is None:
+                continue
+
+            home = totals.setdefault(
+                home_short,
+                {"played": 0, "won": 0, "drawn": 0, "lost": 0, "goals_for": 0, "goals_against": 0, "points": 0},
+            )
+            away = totals.setdefault(
+                away_short,
+                {"played": 0, "won": 0, "drawn": 0, "lost": 0, "goals_for": 0, "goals_against": 0, "points": 0},
+            )
+
+            home["played"] += 1
+            away["played"] += 1
+            home["goals_for"] += home_score
+            home["goals_against"] += away_score
+            away["goals_for"] += away_score
+            away["goals_against"] += home_score
+
+            if home_score > away_score:
+                home["won"] += 1
+                away["lost"] += 1
+                home["points"] += 3
+            elif home_score < away_score:
+                away["won"] += 1
+                home["lost"] += 1
+                away["points"] += 3
+            else:
+                home["drawn"] += 1
+                away["drawn"] += 1
+                home["points"] += 1
+                away["points"] += 1
+
+        ranked = sorted(
+            totals.items(),
+            key=lambda item: (
+                -item[1]["points"],
+                -(item[1]["goals_for"] - item[1]["goals_against"]),
+                -item[1]["goals_for"],
+                item[0],
+            ),
+        )
+
+        standings: list[StandingPayload] = []
+        for rank, (short_name, row) in enumerate(ranked, start=1):
+            standings.append(
+                {
+                    "team_short_name": short_name,
+                    "rank": rank,
+                    "played": row["played"],
+                    "won": row["won"],
+                    "drawn": row["drawn"],
+                    "lost": row["lost"],
+                    "goals_for": row["goals_for"],
+                    "goals_against": row["goals_against"],
+                    "goal_diff": row["goals_for"] - row["goals_against"],
+                    "points": row["points"],
+                }
+            )
+
+        log_event("WARNING", "api_football.parse.standings.fallback_matches", rows=len(standings))
+        return standings
 
     def _fetch_dataset(self, dataset: str, path: str, params: dict[str, object]) -> dict | None:
         try:
