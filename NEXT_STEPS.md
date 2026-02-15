@@ -38,8 +38,7 @@ Primary Focus: Web 제품화(디자인/배포) + 운영 가드레일 고정 + �
 - 완료: `Crawler Live Validate` 워크플로 추가
 - 완료: `Lighthouse Baseline` 워크플로 추가 + 리포트 아카이브
 - 완료: `DEPLOY-001` 배포 파이프라인 초안
-  - `netlify.toml` 추가(`apps/web` 기준 build 설정)
-  - `Netlify Deploy` 워크플로 추가(PR Preview + main Production)
+  - `Vercel Deploy` 워크플로 추가(PR Preview + main Production)
 - 진행중: `main` PR-only/관리자 우회 금지 정책 최종 고정 점검
 
 ### Known Issues / Risks
@@ -50,10 +49,10 @@ Primary Focus: Web 제품화(디자인/배포) + 운영 가드레일 고정 + �
 ## B) Next Priorities
 
 ### P0
-1. 배포 트랙(Netlify) 실배포 검증
+1. 배포 트랙(Vercel) 실배포 검증
 - 범위: Preview/Production 파이프라인 구성
 - DoD:
-  - Netlify 사이트 연결 및 GitHub Secrets 적용 검증
+  - Vercel 프로젝트 연결 및 GitHub Secrets 적용 검증
   - 환경변수 템플릿/운영 문서 정리 및 실제 값 반영
   - PR Preview URL 확인 가능
 
@@ -85,11 +84,11 @@ Primary Focus: Web 제품화(디자인/배포) + 운영 가드레일 고정 + �
   - 업그레이드 계획 + 검증 체크리스트 수립
 
 ## C) In Progress
-- `DEPLOY-001`: Netlify 실배포 검증(Secrets 연결 + Preview URL 확인)
+- `DEPLOY-001`: Vercel 실배포 검증(Secrets 연결 + Preview URL 확인)
 
 ## D) Done Log
 - 2026-02-15
-  - `DEPLOY-001` 초안 반영: `netlify.toml`, `.github/workflows/netlify-deploy.yml`, 운영 문서/환경변수 템플릿 업데이트
+  - `DEPLOY-001` Vercel 전환: `.github/workflows/vercel-deploy.yml` 추가, Netlify 설정 제거, 운영 문서/우선순위 갱신
 - 2026-02-15
   - `WEB-DESIGN-001` 1차 완료: Tailwind + shadcn primitives 도입, `/`, `/matches`, `/teams` 리디자인, `make web-lint/web-build` 통과
 - 2026-02-15
