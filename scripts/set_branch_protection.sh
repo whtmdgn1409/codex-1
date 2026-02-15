@@ -27,7 +27,7 @@ if ! command -v gh >/dev/null 2>&1; then
 fi
 
 # Requires authenticated gh session with repo admin rights.
-# Enforces CI job check name: "CI / api"
+# Enforces required CI job checks.
 
 echo "[info] applying branch protection to ${REPO}:${BRANCH}"
 echo "[info] enforce_admins=${ENFORCE_ADMINS} dry_run=${DRY_RUN}"
@@ -36,7 +36,7 @@ read -r -d '' PAYLOAD <<JSON || true
 {
   "required_status_checks": {
     "strict": true,
-    "contexts": ["CI / api"]
+    "contexts": ["api", "web-e2e"]
   },
   "enforce_admins": ${ENFORCE_ADMINS},
   "required_pull_request_reviews": {

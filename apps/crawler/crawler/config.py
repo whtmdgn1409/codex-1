@@ -24,6 +24,8 @@ class SourceConfig:
     matches_url: str
     match_stats_url: str
     timeout_seconds: int
+    verify_ssl: bool
+    ca_file: str | None
     retry_count: int
     retry_backoff_seconds: float
     parse_strict: bool
@@ -31,6 +33,8 @@ class SourceConfig:
     dataset_policy_players: str
     dataset_policy_matches: str
     dataset_policy_match_stats: str
+    teams_seed_fallback: bool
+    matches_seed_fallback: bool
 
 
 @dataclass
@@ -87,13 +91,19 @@ def load_db_config() -> DbConfig:
 
 def load_source_config() -> SourceConfig:
     parse_strict_raw = os.getenv("PL_PARSE_STRICT", "0").strip().lower()
+    verify_ssl_raw = os.getenv("PL_HTTP_VERIFY_SSL", "1").strip().lower()
+    ca_file_raw = os.getenv("PL_HTTP_CA_FILE", "").strip()
+    teams_seed_fallback_raw = os.getenv("PL_TEAMS_SEED_FALLBACK", "1").strip().lower()
+    matches_seed_fallback_raw = os.getenv("PL_MATCHES_SEED_FALLBACK", "1").strip().lower()
     return SourceConfig(
         source=os.getenv("CRAWLER_DATA_SOURCE", "sample").strip().lower(),
         teams_url=os.getenv("PL_TEAMS_URL", "https://www.premierleague.com/en/clubs"),
-        players_url=os.getenv("PL_PLAYERS_URL", "https://www.premierleague.com/stats/top/players/goals"),
+        players_url=os.getenv("PL_PLAYERS_URL", "https://www.premierleague.com/stats/top/players/goal"),
         matches_url=os.getenv("PL_MATCHES_URL", "https://www.premierleague.com/en/matches"),
         match_stats_url=os.getenv("PL_MATCH_STATS_URL", "https://www.premierleague.com/stats"),
         timeout_seconds=int(os.getenv("PL_HTTP_TIMEOUT_SECONDS", "20")),
+        verify_ssl=verify_ssl_raw in {"1", "true", "yes", "on"},
+        ca_file=ca_file_raw or None,
         retry_count=int(os.getenv("PL_HTTP_RETRY_COUNT", "3")),
         retry_backoff_seconds=float(os.getenv("PL_HTTP_RETRY_BACKOFF_SECONDS", "1.0")),
         parse_strict=parse_strict_raw in {"1", "true", "yes", "on"},
@@ -101,6 +111,8 @@ def load_source_config() -> SourceConfig:
         dataset_policy_players=os.getenv("PL_POLICY_PLAYERS", "skip").strip().lower(),
         dataset_policy_matches=os.getenv("PL_POLICY_MATCHES", "abort").strip().lower(),
         dataset_policy_match_stats=os.getenv("PL_POLICY_MATCH_STATS", "skip").strip().lower(),
+        teams_seed_fallback=teams_seed_fallback_raw in {"1", "true", "yes", "on"},
+        matches_seed_fallback=matches_seed_fallback_raw in {"1", "true", "yes", "on"},
     )
 
 

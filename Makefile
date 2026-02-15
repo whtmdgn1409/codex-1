@@ -1,4 +1,4 @@
-.PHONY: setup lint test test-unit test-openapi test-integration dev web-setup web-dev web-build web-lint web-e2e crawler-setup crawler-ingest crawler-daily crawler-weekly crawler-summary crawler-validate crawler-test
+.PHONY: setup lint test test-unit test-openapi test-integration dev web-setup web-dev web-build web-lint web-e2e web-lighthouse crawler-setup crawler-ingest crawler-daily crawler-weekly crawler-summary crawler-validate crawler-test
 
 setup:
 	python3 -m pip install -r apps/api/requirements.txt
@@ -37,6 +37,9 @@ web-lint:
 
 web-e2e:
 	cd apps/web && npm run test:e2e
+
+web-lighthouse:
+	cd apps/web && npm run lighthouse:baseline
 
 crawler-setup:
 	python3 -m pip install -r apps/crawler/requirements.txt

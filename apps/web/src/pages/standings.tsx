@@ -46,34 +46,46 @@ export default function StandingsPage() {
 
   const teamMap = useMemo(() => new Map(teams.map((team) => [team.team_id, team])), [teams]);
 
-  if (loading) {
-    return <div className="loading">순위표 로딩 중...</div>;
-  }
-
-  if (error) {
-    return <div className="error">순위표 조회 실패: {error}</div>;
-  }
-
   return (
     <div className="stack">
       <h1 className="section-title">리그 순위표</h1>
-      <div className="card table-wrap">
-        {items.length === 0 ? (
+      <p id="standings-note" className="muted">
+        모바일에서는 표를 좌우로 스와이프해 GF, GA, GD를 확인하세요.
+      </p>
+      <div className="row standings-legend" aria-label="순위 구간 안내">
+        <span className="legend-item legend-item--ucl">1-4위 UCL</span>
+        <span className="legend-item legend-item--uel">5위 UEL</span>
+        <span className="legend-item legend-item--relegation">18-20위 강등권</span>
+      </div>
+      <div className="card table-wrap standings-table-wrap">
+        {loading ? (
+          <div className="standings-skeleton" aria-live="polite" aria-label="순위표 로딩 중">
+            <div className="standings-skeleton__line" />
+            <div className="standings-skeleton__line" />
+            <div className="standings-skeleton__line" />
+            <div className="standings-skeleton__line" />
+            <div className="standings-skeleton__line" />
+            <div className="standings-skeleton__line" />
+          </div>
+        ) : error ? (
+          <div className="error">순위표 조회 실패: {error}</div>
+        ) : items.length === 0 ? (
           <div className="empty">순위 데이터가 없습니다.</div>
         ) : (
-          <table>
+          <table className="standings-table" aria-describedby="standings-note">
+            <caption className="sr-only">프리미어리그 순위표</caption>
             <thead>
               <tr>
-                <th>순위</th>
-                <th>팀</th>
-                <th>경기</th>
-                <th>승</th>
-                <th>무</th>
-                <th>패</th>
-                <th>GF</th>
-                <th>GA</th>
-                <th>GD</th>
-                <th>승점</th>
+                <th scope="col">순위</th>
+                <th scope="col">팀</th>
+                <th scope="col">경기</th>
+                <th scope="col">승</th>
+                <th scope="col">무</th>
+                <th scope="col">패</th>
+                <th scope="col">GF</th>
+                <th scope="col">GA</th>
+                <th scope="col">GD</th>
+                <th scope="col">승점</th>
               </tr>
             </thead>
             <tbody>
@@ -84,7 +96,7 @@ export default function StandingsPage() {
                 return (
                   <tr key={item.team_id} className={zoneClass}>
                     <td>{item.rank}</td>
-                    <td>{teamMap.get(item.team_id)?.name ?? `Team #${item.team_id}`}</td>
+                    <th scope="row">{teamMap.get(item.team_id)?.name ?? `Team #${item.team_id}`}</th>
                     <td>{item.played}</td>
                     <td>{item.won}</td>
                     <td>{item.drawn}</td>

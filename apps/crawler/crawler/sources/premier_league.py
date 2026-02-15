@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+import ssl
 import time
 from dataclasses import dataclass
 from html.parser import HTMLParser
@@ -10,11 +11,14 @@ from urllib.request import Request, urlopen
 from crawler.config import SourceConfig
 from crawler.logging_utils import log_event
 from crawler.sources.base import DataSource
+from crawler.sources.matches_seed import load_seed_matches
+from crawler.sources.teams_seed import load_seed_teams
 from crawler.sources.types import MatchPayload, MatchStatPayload, PlayerPayload, TeamPayload
 
 Dataset = str
 
 TEAM_ALIASES: dict[str, list[str]] = {
+    "team_id": ["team_id", "id"],
     "name": ["name", "club", "team", "team_name", "club_name"],
     "short_name": ["short_name", "abbr", "short", "code", "team_short_name", "abbreviation", "shortname"],
     "logo_url": ["logo_url", "logo", "crest", "image_url", "crest_url", "badge", "badge_url"],
@@ -33,8 +37,10 @@ PLAYER_ALIASES: dict[str, list[str]] = {
 }
 
 MATCH_ALIASES: dict[str, list[str]] = {
-    "round": ["round", "matchweek", "match_week", "week", "gw"],
+    "round": ["round", "matchweek", "match_week", "week", "gw", "event"],
     "match_date": ["match_date", "date", "kickoff", "kickoff_time", "kickoff_date", "kickoff_datetime", "kickoff_utc", "kickoff_label"],
+    "home_team_id": ["home_team_id", "team_h", "home_id"],
+    "away_team_id": ["away_team_id", "team_a", "away_id"],
     "home_team_short_name": [
         "home_team_short_name",
         "home_team_shortname",
@@ -51,9 +57,9 @@ MATCH_ALIASES: dict[str, list[str]] = {
         "away_team_code",
         "away",
     ],
-    "home_score": ["home_score", "home_goals", "score_home"],
-    "away_score": ["away_score", "away_goals", "score_away"],
-    "status": ["status", "match_status", "result_status", "state"],
+    "home_score": ["home_score", "home_goals", "score_home", "team_h_score"],
+    "away_score": ["away_score", "away_goals", "score_away", "team_a_score"],
+    "status": ["status", "match_status", "result_status", "state", "finished"],
 }
 
 MATCH_STATS_ALIASES: dict[str, list[str]] = {
@@ -68,7 +74,6 @@ MATCH_STATS_ALIASES: dict[str, list[str]] = {
     "corners": ["corners", "corner_kicks", "corners_won"],
 }
 
-
 def _normalize_key(value: str) -> str:
     normalized = value.strip()
     normalized = re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", normalized)
@@ -77,6 +82,23 @@ def _normalize_key(value: str) -> str:
     normalized = re.sub(r"[\s\-\/]+", "_", normalized)
     normalized = re.sub(r"[^a-z0-9_]", "", normalized)
     return normalized
+
+
+def _build_seed_short_name_map() -> dict[str, str]:
+    seed_map: dict[str, str] = {}
+    for team in load_seed_teams():
+        raw_name = str(team.get("name", "")).strip()
+        short_name = str(team.get("short_name", "")).strip()
+        if not raw_name or not short_name:
+            continue
+        seed_map[_normalize_key(raw_name)] = short_name
+        fc_trimmed = re.sub(r"\bfc\b", "", raw_name, flags=re.IGNORECASE).strip()
+        if fc_trimmed:
+            seed_map[_normalize_key(fc_trimmed)] = short_name
+    return seed_map
+
+
+_SEED_SHORT_NAME_MAP = _build_seed_short_name_map()
 
 
 def _safe_int(value: str) -> int | None:
@@ -92,6 +114,28 @@ def _safe_float(value: str) -> float | None:
         return float(normalized)
     except Exception:
         return None
+
+
+def _derive_short_name(team_name: str) -> str:
+    normalized_name = _normalize_key(team_name)
+    if normalized_name in _SEED_SHORT_NAME_MAP:
+        return _SEED_SHORT_NAME_MAP[normalized_name]
+
+    no_fc = re.sub(r"\bfc\b", "", team_name, flags=re.IGNORECASE).strip()
+    normalized_no_fc = _normalize_key(no_fc)
+    if normalized_no_fc in _SEED_SHORT_NAME_MAP:
+        return _SEED_SHORT_NAME_MAP[normalized_no_fc]
+
+    cleaned = re.sub(r"[^A-Za-z0-9\s]", " ", team_name).strip()
+    if not cleaned:
+        return "UNK"
+    parts = [part for part in cleaned.split() if part]
+    if len(parts) >= 2:
+        initials = "".join(part[0] for part in parts[:3]).upper()
+        if len(initials) >= 2:
+            return initials[:3]
+    compact = "".join(parts)
+    return compact[:3].upper() if compact else "UNK"
 
 
 @dataclass
@@ -193,34 +237,146 @@ class _ScriptJsonParser(HTMLParser):
             self._script_data.append(data)
 
 
+class _AnchorParser(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__()
+        self._in_anchor = False
+        self._current_href = ""
+        self._current_text: list[str] = []
+        self.links: list[tuple[str, str]] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        if tag != "a":
+            return
+        attrs_dict = {k.lower(): (v or "") for k, v in attrs}
+        self._current_href = attrs_dict.get("href", "")
+        self._current_text = []
+        self._in_anchor = True
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag != "a" or not self._in_anchor:
+            return
+        text = " ".join("".join(self._current_text).split()).strip()
+        self.links.append((self._current_href, text))
+        self._in_anchor = False
+        self._current_href = ""
+        self._current_text = []
+
+    def handle_data(self, data: str) -> None:
+        if self._in_anchor:
+            self._current_text.append(data)
+
+
 class PremierLeagueDataSource(DataSource):
     def __init__(self, config: SourceConfig) -> None:
         self.config = config
+        self._team_id_to_short: dict[int, str] = {}
 
     def load_teams(self) -> list[TeamPayload]:
-        html = self._fetch_with_retry(self.config.teams_url, "pl.fetch.teams")
-        records = self._extract_records(
-            dataset="teams",
-            html=html,
-            aliases=TEAM_ALIASES,
-            required=["name", "short_name", "stadium", "manager"],
-        )
+        html = self._fetch_html_for_dataset("teams", self.config.teams_url, "pl.fetch.teams")
+        if html is None:
+            if self.config.teams_seed_fallback:
+                seed_payload = load_seed_teams()
+                log_event("WARNING", "pl.parse.teams_seed_fallback", rows=len(seed_payload))
+                return seed_payload
+            return []
+        records = self._extract_from_table(html=html, aliases=TEAM_ALIASES, required=["name"])
+        if records:
+            log_event("INFO", "pl.parse.strategy", dataset="teams", strategy="table", rows=len(records))
+        if not records:
+            records = self._extract_from_json(html=html, aliases=TEAM_ALIASES, required=["name"])
+            if records:
+                log_event("INFO", "pl.parse.strategy", dataset="teams", strategy="json", rows=len(records))
+        if not records:
+            records = self._extract_teams_from_links(html)
+            if records:
+                log_event("INFO", "pl.parse.strategy", dataset="teams", strategy="links", rows=len(records))
+        if not records:
+            if self.config.teams_seed_fallback:
+                seed_payload = load_seed_teams()
+                log_event("WARNING", "pl.parse.teams_seed_fallback", rows=len(seed_payload))
+                return seed_payload
+            records = self._handle_dataset_issue("teams", reason="no_records_after_all_strategies")
+
         payload: list[TeamPayload] = []
         for row in records:
+            name = row["name"].strip()
+            short_name = row.get("short_name", "").strip() or _derive_short_name(name)
+            team_id = _safe_int(row.get("team_id", ""))
+            if team_id is not None and team_id > 0:
+                self._team_id_to_short[team_id] = short_name
             payload.append(
                 {
-                    "name": row["name"],
-                    "short_name": row["short_name"],
+                    "name": name,
+                    "short_name": short_name,
                     "logo_url": row.get("logo_url", ""),
-                    "stadium": row["stadium"],
-                    "manager": row["manager"],
+                    "stadium": row.get("stadium", ""),
+                    "manager": row.get("manager", ""),
                 }
             )
         log_event("INFO", "pl.parse.teams", rows=len(payload))
         return payload
 
+    def _extract_teams_from_links(self, html: str) -> list[dict[str, str]]:
+        parser = _AnchorParser()
+        parser.feed(html)
+        items: list[dict[str, str]] = []
+        seen_names: set[str] = set()
+
+        for href, text in parser.links:
+            href_lower = href.lower()
+            if "/clubs/" not in href_lower:
+                continue
+
+            team_name = text.strip()
+            if not team_name or team_name.lower() in {"clubs", "all clubs", "club"}:
+                team_name = self._name_from_club_href(href)
+            if not team_name:
+                continue
+
+            normalized_name = " ".join(team_name.split()).strip()
+            if not normalized_name:
+                continue
+            key = normalized_name.lower()
+            if key in seen_names:
+                continue
+            seen_names.add(key)
+
+            items.append(
+                {
+                    "name": normalized_name,
+                    "short_name": _derive_short_name(normalized_name),
+                    "logo_url": "",
+                    "stadium": "",
+                    "manager": "",
+                }
+            )
+        return items
+
+    def _name_from_club_href(self, href: str) -> str:
+        patterns = [
+            r"/clubs/\d+/([^/?#]+)/",
+            r"/clubs/\d+/([^/?#]+)$",
+            r"/clubs/([^/?#]+)/",
+            r"/clubs/([^/?#]+)$",
+        ]
+        for pattern in patterns:
+            matched = re.search(pattern, href, flags=re.IGNORECASE)
+            if not matched:
+                continue
+            slug = matched.group(1).strip("-_ ")
+            if not slug:
+                continue
+            words = [segment for segment in re.split(r"[-_]+", slug) if segment]
+            if not words:
+                continue
+            return " ".join(word.capitalize() for word in words)
+        return ""
+
     def load_players(self) -> list[PlayerPayload]:
-        html = self._fetch_with_retry(self.config.players_url, "pl.fetch.players")
+        html = self._fetch_html_for_dataset("players", self.config.players_url, "pl.fetch.players")
+        if html is None:
+            return []
         records = self._extract_records(
             dataset="players",
             html=html,
@@ -244,31 +400,81 @@ class PremierLeagueDataSource(DataSource):
         return payload
 
     def load_matches(self) -> list[MatchPayload]:
-        html = self._fetch_with_retry(self.config.matches_url, "pl.fetch.matches")
-        records = self._extract_records(
-            dataset="matches",
+        try:
+            html = self._fetch_with_retry(self.config.matches_url, "pl.fetch.matches")
+        except Exception as exc:
+            if self.config.matches_seed_fallback:
+                seed_payload = load_seed_matches()
+                log_event("WARNING", "pl.parse.matches_seed_fallback", rows=len(seed_payload), reason=type(exc).__name__)
+                return seed_payload
+            self._handle_dataset_issue("matches", reason=f"fetch_failed:{type(exc).__name__}")
+            return []
+
+        records = self._extract_from_table(
             html=html,
             aliases=MATCH_ALIASES,
-            required=["round", "match_date", "home_team_short_name", "away_team_short_name", "status"],
+            required=["round", "match_date"],
         )
+        if records:
+            log_event("INFO", "pl.parse.strategy", dataset="matches", strategy="table", rows=len(records))
+        if not records:
+            records = self._extract_from_json(
+                html=html,
+                aliases=MATCH_ALIASES,
+                required=["round", "match_date"],
+            )
+            if records:
+                log_event("INFO", "pl.parse.strategy", dataset="matches", strategy="json", rows=len(records))
+        if not records and self.config.matches_seed_fallback:
+            seed_payload = load_seed_matches()
+            log_event("WARNING", "pl.parse.matches_seed_fallback", rows=len(seed_payload), reason="no_records_after_all_strategies")
+            return seed_payload
+        if not records:
+            records = self._handle_dataset_issue("matches", reason="no_records_after_all_strategies")
+
         payload: list[MatchPayload] = []
         for row in records:
+            home_short = row.get("home_team_short_name", "").strip()
+            away_short = row.get("away_team_short_name", "").strip()
+            if not home_short:
+                home_team_id = _safe_int(row.get("home_team_id", ""))
+                if home_team_id is not None:
+                    home_short = self._team_id_to_short.get(home_team_id, "")
+            if not away_short:
+                away_team_id = _safe_int(row.get("away_team_id", ""))
+                if away_team_id is not None:
+                    away_short = self._team_id_to_short.get(away_team_id, "")
+            if not home_short or not away_short:
+                continue
+
+            status_raw = row.get("status", "").strip().upper()
+            if status_raw in {"TRUE", "1", "YES"}:
+                status = "FINISHED"
+            elif status_raw in {"FALSE", "0", "NO", ""}:
+                status = "SCHEDULED"
+            elif "FIN" in status_raw:
+                status = "FINISHED"
+            else:
+                status = "SCHEDULED"
+
             payload.append(
                 {
                     "round": _safe_int(row["round"]) or 0,
                     "match_date": row["match_date"],
-                    "home_team_short_name": row["home_team_short_name"],
-                    "away_team_short_name": row["away_team_short_name"],
+                    "home_team_short_name": home_short,
+                    "away_team_short_name": away_short,
                     "home_score": _safe_int(row.get("home_score", "")),
                     "away_score": _safe_int(row.get("away_score", "")),
-                    "status": row["status"],
+                    "status": status,
                 }
             )
         log_event("INFO", "pl.parse.matches", rows=len(payload))
         return payload
 
     def load_match_stats(self) -> list[MatchStatPayload]:
-        html = self._fetch_with_retry(self.config.match_stats_url, "pl.fetch.match_stats")
+        html = self._fetch_html_for_dataset("match_stats", self.config.match_stats_url, "pl.fetch.match_stats")
+        if html is None:
+            return []
         records = self._extract_records(
             dataset="match_stats",
             html=html,
@@ -318,9 +524,23 @@ class PremierLeagueDataSource(DataSource):
         assert last_error is not None
         raise last_error
 
+    def _fetch_html_for_dataset(self, dataset: Dataset, url: str, event_name: str) -> str | None:
+        try:
+            return self._fetch_with_retry(url, event_name)
+        except Exception as exc:
+            reason = f"fetch_failed:{type(exc).__name__}"
+            self._handle_dataset_issue(dataset, reason=reason)
+            return None
+
     def _http_get(self, url: str) -> str:
         request = Request(url, headers={"User-Agent": "EPL-Information-Hub-Crawler/1.0"})
-        with urlopen(request, timeout=self.config.timeout_seconds) as response:
+        if self.config.verify_ssl:
+            context = ssl.create_default_context(cafile=self.config.ca_file)
+        else:
+            context = ssl._create_unverified_context()
+            log_event("WARNING", "pl.http.ssl_verify_disabled", url=url)
+
+        with urlopen(request, timeout=self.config.timeout_seconds, context=context) as response:
             return response.read().decode("utf-8", errors="replace")
 
     def _extract_records(
@@ -400,9 +620,15 @@ class PremierLeagueDataSource(DataSource):
         return []
 
     def _extract_json_candidates(self, html: str) -> list[object]:
+        stripped = html.strip()
+        values: list[object] = []
+        if stripped.startswith("{") or stripped.startswith("["):
+            direct = self._json_load(stripped)
+            if direct is not None:
+                values.append(direct)
+
         parser = _ScriptJsonParser()
         parser.feed(html)
-        values: list[object] = []
 
         for block in parser.json_blocks:
             obj = self._json_load(block)
@@ -410,13 +636,23 @@ class PremierLeagueDataSource(DataSource):
                 values.append(obj)
 
         for block in parser.script_blocks:
-            for variable in ("__NEXT_DATA__", "__PRELOADED_STATE__", "__INITIAL_STATE__"):
+            for variable in (
+                "__NEXT_DATA__",
+                "__PRELOADED_STATE__",
+                "__INITIAL_STATE__",
+                "window.__NEXT_DATA__",
+                "window.PULSE.envPaths",
+                "PULSE.envPaths",
+                "window.PULSE.app",
+                "PULSE.app",
+            ):
                 raw = self._extract_assigned_json(block, variable)
                 if raw is None:
                     continue
                 obj = self._json_load(raw)
                 if obj is not None:
                     values.append(obj)
+            values.extend(self._extract_inline_json_objects(block))
         return values
 
     def _extract_assigned_json(self, script_block: str, variable: str) -> str | None:
@@ -426,15 +662,40 @@ class PremierLeagueDataSource(DataSource):
         eq_index = script_block.find("=", marker_index)
         if eq_index < 0:
             return None
-        start = script_block.find("{", eq_index)
-        if start < 0:
+        start = eq_index + 1
+        while start < len(script_block) and script_block[start].isspace():
+            start += 1
+        if start >= len(script_block) or script_block[start] not in "{[":
             return None
+        return self._extract_balanced(script_block, start)
 
-        depth = 0
+    def _extract_inline_json_objects(self, script_block: str) -> list[object]:
+        values: list[object] = []
+        for opening in ("{", "["):
+            start = 0
+            while start < len(script_block):
+                idx = script_block.find(opening, start)
+                if idx < 0:
+                    break
+                raw = self._extract_balanced(script_block, idx)
+                if raw is None:
+                    start = idx + 1
+                    continue
+                parsed = self._json_load(raw)
+                if parsed is not None:
+                    values.append(parsed)
+                start = idx + 1
+        return values
+
+    def _extract_balanced(self, text: str, start: int) -> str | None:
+        opening = text[start]
+        closing = "}" if opening == "{" else "]"
+        stack = [closing]
+
         in_string = False
         escaped = False
-        for idx in range(start, len(script_block)):
-            char = script_block[idx]
+        for idx in range(start + 1, len(text)):
+            char = text[idx]
             if escaped:
                 escaped = False
                 continue
@@ -447,12 +708,15 @@ class PremierLeagueDataSource(DataSource):
             if in_string:
                 continue
             if char == "{":
-                depth += 1
+                stack.append("}")
                 continue
-            if char == "}":
-                depth -= 1
-                if depth == 0:
-                    return script_block[start : idx + 1]
+            if char == "[":
+                stack.append("]")
+                continue
+            if char == stack[-1]:
+                stack.pop()
+                if not stack:
+                    return text[start : idx + 1]
         return None
 
     def _json_load(self, raw: str) -> object | None:

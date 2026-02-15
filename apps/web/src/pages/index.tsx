@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import type { GetServerSideProps, InferGetServerSidePropsType } from "next";
 
 import { listMatches, listStandings, listTeams, topStats } from "@/lib/api";
 import { formatDateTime } from "@/lib/format";
@@ -12,82 +12,67 @@ type HomeState = {
   teams: TeamItem[];
 };
 
-export default function HomePage() {
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [state, setState] = useState<HomeState>({
-    matches: [],
-    standings: [],
-    topScorers: [],
-    teams: []
+type HomeProps = {
+  state: HomeState;
+  error: string | null;
+};
+
+const EMPTY_STATE: HomeState = {
+  matches: [],
+  standings: [],
+  topScorers: [],
+  teams: []
+};
+
+function buildHomeState(state: HomeState): HomeState {
+  return {
+    matches: state.matches,
+    standings: state.standings,
+    topScorers: state.topScorers,
+    teams: state.teams
+  };
+}
+
+export const getServerSideProps: GetServerSideProps<HomeProps> = async () => {
+  const [matchesRes, standingsRes, scorersRes, teamsRes] = await Promise.allSettled([
+    listMatches({ limit: 10, offset: 0 }),
+    listStandings(),
+    topStats("goals", 3),
+    listTeams()
+  ]);
+
+  const hasFailure = [matchesRes, standingsRes, scorersRes, teamsRes].some((result) => result.status === "rejected");
+
+  const state = buildHomeState({
+    matches: matchesRes.status === "fulfilled" ? matchesRes.value.items : [],
+    standings: standingsRes.status === "fulfilled" ? standingsRes.value.items : [],
+    topScorers: scorersRes.status === "fulfilled" ? scorersRes.value.items : [],
+    teams: teamsRes.status === "fulfilled" ? teamsRes.value.items : []
   });
 
-  useEffect(() => {
-    let active = true;
-
-    async function load(): Promise<void> {
-      setLoading(true);
-      setError(null);
-
-      try {
-        const [matchesRes, standingsRes, scorersRes, teamsRes] = await Promise.all([
-          listMatches({ limit: 10, offset: 0 }),
-          listStandings(),
-          topStats("goals", 3),
-          listTeams()
-        ]);
-
-        if (!active) {
-          return;
-        }
-
-        setState({
-          matches: matchesRes.items,
-          standings: standingsRes.items,
-          topScorers: scorersRes.items,
-          teams: teamsRes.items
-        });
-      } catch (err) {
-        if (!active) {
-          return;
-        }
-        const message = err instanceof Error ? err.message : "데이터를 불러오지 못했습니다.";
-        setError(message);
-      } finally {
-        if (active) {
-          setLoading(false);
-        }
-      }
+  return {
+    props: {
+      state,
+      error: hasFailure ? "일부 데이터를 불러오지 못했습니다." : null
     }
+  };
+};
 
-    void load();
-    return () => {
-      active = false;
-    };
-  }, []);
+export default function HomePage({ state, error }: InferGetServerSidePropsType<typeof getServerSideProps>) {
+  const safeState = state ?? EMPTY_STATE;
+  const teamMap = new Map(safeState.teams.map((team) => [team.team_id, team]));
 
-  const teamMap = useMemo(() => {
-    return new Map(state.teams.map((team) => [team.team_id, team]));
-  }, [state.teams]);
+  const finishedHighlights = safeState.matches.filter((match) => match.status === "FINISHED").slice(0, 4);
+  const upcomingHighlights = safeState.matches.filter((match) => match.status !== "FINISHED").slice(0, 3);
 
-  const finishedHighlights = state.matches.filter((match) => match.status === "FINISHED").slice(0, 4);
-  const upcomingHighlights = state.matches.filter((match) => match.status !== "FINISHED").slice(0, 3);
-
-  const miniStandings = state.standings.filter(
-    (item) => item.rank <= 5 || item.rank >= Math.max(18, state.standings.length - 2)
+  const miniStandings = safeState.standings.filter(
+    (item) => item.rank <= 5 || item.rank >= Math.max(18, safeState.standings.length - 2)
   );
-
-  if (loading) {
-    return <div className="loading">홈 대시보드 로딩 중...</div>;
-  }
-
-  if (error) {
-    return <div className="error">홈 대시보드 조회 실패: {error}</div>;
-  }
 
   return (
     <div className="stack">
       <h1 className="section-title">프리미어리그 정보 허브</h1>
+      {error ? <div className="error">홈 대시보드 부분 조회 실패: {error}</div> : null}
 
       <section className="grid grid--2">
         <article className="card stack">
@@ -167,10 +152,10 @@ export default function HomePage() {
 
         <article className="card stack">
           <h2 className="card-title">득점 Top 3</h2>
-          {state.topScorers.length === 0 ? (
+          {safeState.topScorers.length === 0 ? (
             <div className="empty">선수 통계 데이터가 없습니다.</div>
           ) : (
-            state.topScorers.map((item, index) => (
+            safeState.topScorers.map((item, index) => (
               <div key={item.player_id} className="row">
                 <span>
                   {index + 1}. {item.player_name} ({item.team_short_name})

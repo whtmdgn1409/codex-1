@@ -21,6 +21,8 @@ def _source_config() -> SourceConfig:
         matches_url="https://example.com/matches",
         match_stats_url="https://example.com/match-stats",
         timeout_seconds=1,
+        verify_ssl=True,
+        ca_file=None,
         retry_count=3,
         retry_backoff_seconds=0.0,
         parse_strict=False,
@@ -28,6 +30,8 @@ def _source_config() -> SourceConfig:
         dataset_policy_players="skip",
         dataset_policy_matches="skip",
         dataset_policy_match_stats="skip",
+        teams_seed_fallback=True,
+        matches_seed_fallback=True,
     )
 
 
@@ -66,6 +70,32 @@ def test_premierleague_parse_teams_aliases_from_official_fixture(monkeypatch: py
     assert teams[1]["stadium"] == "Anfield"
 
 
+def test_premierleague_parse_teams_from_pulse_assignment_fixture(monkeypatch: pytest.MonkeyPatch) -> None:
+    source = PremierLeagueDataSource(_source_config())
+    monkeypatch.setattr(source, "_http_get", lambda _: _fixture_html("teams_pulse_assignment.html"))
+
+    teams = source.load_teams()
+
+    assert len(teams) == 2
+    assert teams[0]["name"] == "Arsenal FC"
+    assert teams[0]["short_name"] == "ARS"
+    assert teams[0]["manager"] == "Mikel Arteta"
+    assert teams[1]["stadium"] == "Anfield"
+
+
+def test_premierleague_parse_teams_from_links_fallback_fixture(monkeypatch: pytest.MonkeyPatch) -> None:
+    source = PremierLeagueDataSource(_source_config())
+    monkeypatch.setattr(source, "_http_get", lambda _: _fixture_html("teams_links_fallback.html"))
+
+    teams = source.load_teams()
+
+    assert len(teams) == 3
+    assert teams[0]["name"] == "Arsenal"
+    assert teams[0]["short_name"] == "ARS"
+    assert teams[1]["name"] == "Liverpool"
+    assert teams[2]["name"] == "Manchester City"
+
+
 def test_premierleague_json_fallback_for_matches_from_next_data_fixture(monkeypatch: pytest.MonkeyPatch) -> None:
     source = PremierLeagueDataSource(_source_config())
     monkeypatch.setattr(source, "_http_get", lambda _: _fixture_html("matches_official.html"))
@@ -81,6 +111,30 @@ def test_premierleague_json_fallback_for_matches_from_next_data_fixture(monkeypa
     assert matches[0]["away_score"] == 1
     assert matches[1]["status"] == "SCHEDULED"
     assert matches[1]["home_score"] is None
+
+
+def test_premierleague_parse_teams_and_matches_from_direct_json_api_fixture(monkeypatch: pytest.MonkeyPatch) -> None:
+    source = PremierLeagueDataSource(_source_config())
+
+    def fake_http_get(url: str) -> str:
+        if "teams" in url:
+            return _fixture_html("teams_bootstrap_api.json")
+        if "matches" in url:
+            return _fixture_html("matches_fixtures_api.json")
+        return "<html><body></body></html>"
+
+    monkeypatch.setattr(source, "_http_get", fake_http_get)
+
+    teams = source.load_teams()
+    matches = source.load_matches()
+
+    assert len(teams) == 3
+    assert teams[0]["short_name"] == "ARS"
+    assert len(matches) == 2
+    assert matches[0]["home_team_short_name"] == "ARS"
+    assert matches[0]["away_team_short_name"] == "LIV"
+    assert matches[0]["status"] == "FINISHED"
+    assert matches[1]["status"] == "SCHEDULED"
 
 
 def test_premierleague_json_fallback_for_match_stats_nested_fixture(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -100,7 +154,9 @@ def test_premierleague_json_fallback_for_match_stats_nested_fixture(monkeypatch:
 
 
 def test_dataset_policy_skip_returns_empty_when_no_records(monkeypatch: pytest.MonkeyPatch) -> None:
-    source = PremierLeagueDataSource(_source_config())
+    config = _source_config()
+    config.matches_seed_fallback = False
+    source = PremierLeagueDataSource(config)
     monkeypatch.setattr(source, "_http_get", lambda _: "<html><body><div>empty</div></body></html>")
 
     assert source.load_matches() == []
@@ -114,6 +170,82 @@ def test_dataset_policy_abort_raises_when_no_records(monkeypatch: pytest.MonkeyP
 
     with pytest.raises(ValueError):
         source.load_match_stats()
+
+
+def test_teams_seed_fallback_returns_seed_when_parse_fails(monkeypatch: pytest.MonkeyPatch) -> None:
+    config = _source_config()
+    config.dataset_policy_teams = "abort"
+    config.teams_seed_fallback = True
+    source = PremierLeagueDataSource(config)
+    monkeypatch.setattr(source, "_http_get", lambda _: "<html><body><div>empty</div></body></html>")
+
+    teams = source.load_teams()
+
+    assert len(teams) >= 20
+    assert any(team["short_name"] == "ARS" for team in teams)
+
+
+def test_teams_seed_fallback_disabled_honors_abort_policy(monkeypatch: pytest.MonkeyPatch) -> None:
+    config = _source_config()
+    config.dataset_policy_teams = "abort"
+    config.teams_seed_fallback = False
+    source = PremierLeagueDataSource(config)
+    monkeypatch.setattr(source, "_http_get", lambda _: "<html><body><div>empty</div></body></html>")
+
+    with pytest.raises(ValueError):
+        source.load_teams()
+
+
+def test_players_fetch_failure_respects_skip_policy(monkeypatch: pytest.MonkeyPatch) -> None:
+    config = _source_config()
+    config.dataset_policy_players = "skip"
+    source = PremierLeagueDataSource(config)
+
+    def failing_fetch(url: str) -> str:
+        if "players" in url:
+            raise RuntimeError("players fetch failed")
+        return _fixture_html("teams_official.html")
+
+    monkeypatch.setattr(source, "_http_get", failing_fetch)
+    players = source.load_players()
+    assert players == []
+
+
+def test_matches_fetch_failure_honors_abort_policy(monkeypatch: pytest.MonkeyPatch) -> None:
+    config = _source_config()
+    config.dataset_policy_matches = "abort"
+    config.matches_seed_fallback = False
+    source = PremierLeagueDataSource(config)
+    def failing_fetch(_: str) -> str:
+        raise RuntimeError("matches fetch failed")
+
+    monkeypatch.setattr(source, "_http_get", failing_fetch)
+
+    with pytest.raises(ValueError):
+        source.load_matches()
+
+
+def test_matches_seed_fallback_returns_seed_when_parse_fails(monkeypatch: pytest.MonkeyPatch) -> None:
+    config = _source_config()
+    config.dataset_policy_matches = "abort"
+    config.matches_seed_fallback = True
+    source = PremierLeagueDataSource(config)
+    monkeypatch.setattr(source, "_http_get", lambda _: "<html><body><div>empty</div></body></html>")
+
+    matches = source.load_matches()
+    assert len(matches) >= 1
+    assert matches[0]["home_team_short_name"] == "ARS"
+
+
+def test_matches_seed_fallback_disabled_honors_parse_abort(monkeypatch: pytest.MonkeyPatch) -> None:
+    config = _source_config()
+    config.dataset_policy_matches = "abort"
+    config.matches_seed_fallback = False
+    source = PremierLeagueDataSource(config)
+    monkeypatch.setattr(source, "_http_get", lambda _: "<html><body><div>empty</div></body></html>")
+
+    with pytest.raises(ValueError):
+        source.load_matches()
 
 
 def test_premierleague_fetch_retry(monkeypatch: pytest.MonkeyPatch) -> None:

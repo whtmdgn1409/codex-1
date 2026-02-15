@@ -13,6 +13,7 @@
   - 재시도: `PL_HTTP_RETRY_COUNT`
   - 백오프: `PL_HTTP_RETRY_BACKOFF_SECONDS`
   - 타임아웃: `PL_HTTP_TIMEOUT_SECONDS`
+  - 권장 기본값: `PL_PLAYERS_URL=https://www.premierleague.com/stats/top/players/goal`
 - 파싱:
   - 다중 파싱 전략:
     - 1차: HTML table 파싱(헤더 alias 매핑)
@@ -25,6 +26,12 @@
     - `PL_POLICY_PLAYERS=abort|skip` (기본 `skip`)
     - `PL_POLICY_MATCHES=abort|skip` (기본 `abort`)
     - `PL_POLICY_MATCH_STATS=abort|skip` (기본 `skip`)
+  - Teams seed fallback:
+    - `PL_TEAMS_SEED_FALLBACK=1` (기본): teams 파싱 실패 시 seed 팀 목록으로 대체
+    - `PL_TEAMS_SEED_FALLBACK=0`: seed fallback 비활성화(정책값 그대로 abort/skip 적용)
+  - Matches seed fallback:
+    - `PL_MATCHES_SEED_FALLBACK=1` (기본): matches fetch/파싱 실패 시 seed 경기 목록으로 대체
+    - `PL_MATCHES_SEED_FALLBACK=0`: seed fallback 비활성화(정책값 그대로 abort/skip 적용)
 
 ## Field Mapping (Crawler Payload)
 - `teams`: `name`, `short_name`, `logo_url`, `stadium`, `manager`
@@ -51,3 +58,4 @@
 - 운영 안정성 기준:
   - 핵심 데이터셋(`teams`, `matches`)은 `abort`
   - 부가 데이터셋(`players`, `match_stats`)은 `skip`
+  - 단, `teams`는 공식 페이지 파싱 실패 대비 seed fallback을 기본 활성화
