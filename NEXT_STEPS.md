@@ -1,158 +1,111 @@
 # NEXT STEPS
 
-Last Updated: 2026-02-14
-Primary Focus: CRAWL-002 완료 전환 + 운영 가드레일 고정 + Web 성능 실측/개선
+Last Updated: 2026-02-15
+Primary Focus: Web 제품화(디자인/배포) + 운영 가드레일 고정 + 데이터 품질 고도화
 
 ## A) Current Status
 
 ### Backend/API
 - 완료: `API-001`~`API-005`
 - 완료: OpenAPI 스냅샷 테스트 + API 통합 테스트(`API-002`~`API-005`) CI 필수 단계 반영
-- 완료: `GET /matches/{id}`, `GET /teams/{id}`에 404 응답 스키마 명시
+- 완료: `GET /matches/{id}`, `GET /teams/{id}` 404 응답 스키마 명시
 
 ### Frontend
-- 완료: Next.js + TypeScript 초기 구축 (`apps/web`)
-- 완료: 라우트 1차 구현
+- 완료: Next.js + TypeScript 기반 라우트 MVP
   - `/`, `/matches`, `/matches/[id]`, `/standings`, `/stats`, `/teams`, `/teams/[id]`
+- 완료: 핵심 품질 작업
+  - `WEB-Q-001`: match detail 탭 lazy render + dynamic import
+  - `WEB-Q-002`: home SSR prefetch(`getServerSideProps`) 전환
+  - `WEB-Q-003`: matches 필터 debounce + 단계적 렌더(더보기)
+  - `WEB-Q-004`: standings 접근성/모바일 안정화(caption/scope/legend/skeleton)
 - 완료: `make web-lint`, `make web-build` 통과
-- 완료: `make web-dev` 기동 확인 (`http://localhost:3000`)
-- 완료: Playwright E2E 핵심 플로우 2건 추가 및 로컬 실행 검증 (`apps/web/tests/e2e/core-flows.spec.ts`)
-
-### Infra/CI
-- 완료: `CI / api` 워크플로 구성
-- 완료: 브랜치 보호 규칙에 `CI / api` 필수 체크 적용
-- 완료: `Batch Scheduler` 워크플로 추가 (일/주 배치 cron + 수동 실행)
-- 완료: `CI`에 Web E2E job 추가 및 필수 단계로 전환
-- 완료: `Crawler Live Validate` 워크플로 추가 (실사이트 validate + JSON artifact)
-- 완료: `Lighthouse Baseline` 워크플로 추가 (핵심 라우트 모바일/데스크탑 3회 측정 + 리포트 artifact)
+- 완료: Playwright E2E 핵심 플로우 2건 구축
 
 ### Crawler/Batch
-- 완료: `CRAWL-001` 초기 수집 파이프라인(샘플 소스 + 멱등 업서트)
-- 완료: `BATCH-001` 일배치 스케줄러 연동 (`make crawler-daily`, 매일 09:00 KST)
-- 완료: `BATCH-002` 주배치 스케줄러 연동 (`make crawler-weekly`, 매주 목 12:00 KST)
-- 완료: `BATCH-003` 실패 재시도/Slack 알림 연동 (`BATCH_RETRY_*`, `BATCH_ALERT_SLACK_WEBHOOK`)
-- 완료: `CRAWL-002` 공식 사이트 파서 고도화 + 운영 fallback 정책 확정
-- 완료: `CRAWL-002` fixture 기반 파서 회귀테스트 추가 (`apps/crawler/tests/fixtures/premier_league/*`)
-- 완료: `CRAWL-002` ingest 리포트 템플릿 추가 (`docs/crawl-002-ingest-report.md`)
-- 완료: `CRAWL-002` `pl` 실측 ingest validate(CI runner) 및 리포트 상태 `COMPLETED` 전환
+- 완료: `CRAWL-001` 샘플 소스 멱등 업서트
+- 완료: `CRAWL-002` 공식 소스 파서 고도화 + 운영 fallback 정책 확정
+  - teams/matches seed fallback 기본 활성
+  - players/match_stats fetch 실패 시 skip 정책 반영
+- 완료: `CRAWL-002` CI live validate 성공 (`run 22008172330`)
+- 완료: `docs/crawl-002-ingest-report.md` 상태 `COMPLETED`
+- 완료: `BATCH-001`, `BATCH-002`, `BATCH-003` (일/주 스케줄 + 재시도 + Slack 알림)
+
+### Infra/CI
+- 완료: `CI / api`, `CI / web-e2e` 필수 단계화
+- 완료: `Crawler Live Validate` 워크플로 추가
+- 완료: `Lighthouse Baseline` 워크플로 추가 + 리포트 아카이브
+- 진행중: `main` PR-only/관리자 우회 금지 정책 최종 고정 점검
 
 ### Known Issues / Risks
-- `apps/web` 의존성에서 보안 취약점 경고 존재 (`npm audit` 기준 4건)
-- 현재 `main` 브랜치에 관리자 우회 푸시가 가능했던 이력 존재 (PR-only 운영 고정 필요)
-- `CRAWL-002` 운영 안정성은 확보됐지만 teams/matches seed fallback 의존 구간 존재(데이터 품질 고도화 여지)
-- Lighthouse CLI 설치/실행이 현재 네트워크 제약으로 타임아웃(실측 자동화 지연)
+- `apps/web` 의존성 취약점 경고(`npm audit`) 잔여
+- `CRAWL-002`는 안정화되었지만 teams/matches에서 seed fallback 의존 구간 존재
+- Lighthouse 자동화는 동작하지만 기준치 대비 추세 리포트(회귀 경보)는 미구축
 
 ## B) Next Priorities
 
 ### P0
-1. Crawler 소스 확장 (Premier League 공식 사이트 파서 도입)
-- 목적: 샘플 데이터가 아닌 실제 시즌 데이터 적재
+1. UI 리디자인 트랙(shadcn)
+- 범위: 홈/매치/구단 핵심 화면을 shadcn 기반으로 재구성
 - DoD:
-  - `docs/crawl-002-ingest-report.md`에 `pl` 실측 실행 근거(명령/로그/검증 JSON) 기록
-  - `summary` 실제 카운트 및 검증 결과(`teams>0`, `matches>0`) 확정
+  - 공통 UI 토큰/컴포넌트 정리(button/card/table/tabs)
+  - 모바일/데스크탑에서 레이아웃 일관성 확보
+  - 기존 기능/라우팅 회귀 없음
 
-2. Premier League 공식 사이트 파서 안정화
-- 목적: 실제 운영 데이터 품질 확보
+2. 배포 트랙(Netlify)
+- 범위: Preview/Production 파이프라인 구성
 - DoD:
-  - 공식 사이트 DOM 변화 대응 파서 보강
-  - 파싱 실패 시 fallback/skip 정책 구체화 및 리포트 이슈 섹션 반영
+  - Netlify 사이트 연결 및 빌드 설정 확정
+  - 환경변수 템플릿/운영 문서 정리
+  - PR Preview URL 확인 가능
+
+3. 운영 가드레일 최종 고정
+- DoD:
+  - `main`에 PR-only + required checks 강제 상태 재확인
+  - 관리자 우회 푸시 금지 상태 문서화
 
 ### P1
-1. Web E2E/핵심 사용자 플로우 테스트 추가
+1. Web 성능 회귀 관리
 - DoD:
-  - 홈 → 일정/결과 → 매치상세 이동 검증
-  - 구단목록 → 구단상세 이동 검증
+  - Lighthouse baseline 대비 개선/악화 비교표 자동 생성
+  - 라우트별 fail threshold 정의(Performance/A11y)
 
-2. Web 성능/접근성 점검 (`Lighthouse` 기준 합의)
+2. Crawler 품질 고도화
 - DoD:
-  - 목표 수치 정의
-  - 개선 항목 backlog 반영
+  - teams/matches 공식 파서 커버리지 확장
+  - seed fallback 사용률/원인 리포트 항목 추가
 
 ### P2
-1. 웹 의존성 취약점 정리 계획
+1. 웹 의존성 취약점 정리
 - DoD:
-  - 취약점 영향 분석
-  - 업그레이드/대체 패키지 계획 수립
-
-## B-1) Execution Queue (Concrete)
-1. `CRAWL-002` 완료 전환
-- 공식 페이지 파싱 품질 고도화(teams/matches seed fallback 의존도 축소)
-- 시즌 데이터 정확도 점검용 샘플 검증 리포트 추가
-2. 브랜치 보호 최종 고정
-- required checks에 `CI / web-e2e` 반영 확인
-- `set_branch_protection.sh`로 `enforce_admins=true` 적용 확인
-3. Lighthouse 실측 baseline 확보
-- `/`, `/matches`, `/matches/[id]`, `/standings` 모바일/데스크탑 3회 측정
-- 결과 JSON 아카이빙 + 기준치 충족/미충족 표시
-4. Web 성능 개선 스프린트 실행
-- `WEB-Q-001`, `WEB-Q-002` 우선 적용 후 재측정
-- 이후 `WEB-Q-003`, `WEB-Q-004` 진행
-5. 보안 취약점 정리 계획 수립
-- `npm audit` 결과 영향도 분석
-- 업그레이드/대체 패키지 계획 및 일정 확정
-6. UI 리디자인 트랙 추가 (shadcn)
-- `apps/web` UI 컴포넌트/스타일을 shadcn 기반으로 전환
-- 홈/매치/구단 핵심 화면을 트렌디한 디자인으로 개편
-7. 배포 트랙 추가 (Netlify)
-- Netlify 배포 파이프라인 구성(Preview/Production)
-- 환경변수/빌드 설정 및 도메인 연결 절차 문서화
+  - 취약점 영향도 분류(즉시/계획/무시)
+  - 업그레이드 계획 + 검증 체크리스트 수립
 
 ## C) In Progress
-- `P1-2`: Web 성능 개선 `WEB-Q-001` 적용 진행중 (매치 상세 탭 lazy render + dynamic import)
-- `P1-2`: Web 성능 개선 `WEB-Q-003` 적용 진행중 (matches 필터 debounce + 단계적 렌더)
-- `P1-2`: Web 성능 개선 `WEB-Q-004` 적용 진행중 (standings 접근성/모바일 안정화)
+- `WEB-DESIGN-001`: shadcn 전환 설계(컴포넌트 맵/우선 화면 정의)
+- `DEPLOY-001`: Netlify 배포 설정 초안(환경변수/빌드 명령/Preview 전략)
 
 ## D) Done Log
+- 2026-02-15
+  - 문서 정합화: `NEXT_STEPS.md`, `README.md` 현재 상태/다음 계획 동기화
 - 2026-02-14
-  - `WEB-Q-004` 1차 적용: `/standings`에 caption/scope/zone legend/skeleton 고정 높이 반영
-  - `WEB-Q-004` 적용 검증: `make web-lint`, `make web-build` 통과
-  - `WEB-Q-003` 1차 적용: `/matches` 필터 debounce(300ms) + 리스트 단계적 렌더(20개 단위 더보기)
-  - `WEB-Q-003` 적용 검증: `make web-lint`, `make web-build` 통과
-  - `CRAWL-002` CI live validate 성공: run `22008172330`
-  - `CRAWL-002` ingest report 상태 `COMPLETED` 전환
-  - `CRAWL-002` matches 운영 완화 적용: 공식 fetch/파싱 실패 시 seed fallback(`PL_MATCHES_SEED_FALLBACK=1` default)
-  - `CRAWL-002` matches fallback 회귀 테스트/validate 보강 완료 (`crawler-test` 27 passed)
-  - `CRAWL-002` teams 운영 완화 적용: 공식 파싱 실패 시 seed(20개) fallback(`PL_TEAMS_SEED_FALLBACK=1` default)
-  - `CRAWL-002` seed fallback 회귀 테스트 추가 및 validate 로컬 검증(`teams=20, matches=1`) 확인
-  - `CRAWL-002` fetch-failure 정책 보강: `players/match_stats`는 fetch 오류 시 `skip` 정책 적용
-  - CI live validate 최신 실패 원인 전환 확인: `teams` -> `matches` 파싱 0건 (run `22008081423`)
-  - `CRAWL-002` CI live validate 실행: run `22007750599`, `22007850722`, `22007891760` 실패 원인 확인(`teams` 0건)
-  - `CRAWL-002` teams fallback 보강: required 완화 + links 기반 fallback + 회귀 테스트 추가
-  - `WEB-Q-002` 적용 완료: 홈(`/`) 데이터를 SSR prefetch(`getServerSideProps`)로 전환해 초기 로딩 상태 제거
-  - `Lighthouse Baseline` CI 자동화 실행 확인: run `22007750602`, `22007793692` 성공
-  - `Lighthouse Baseline` 자동화 추가: `apps/web/scripts/run-lighthouse-baseline.mjs`, `make web-lighthouse`
-  - CI 워크플로 추가: `Crawler Live Validate`, `Lighthouse Baseline`
-  - `CRAWL-002` 파서 보강: 스크립트 assignment/PULSE 계열 JSON fallback 추가
-  - `CRAWL-002` 회귀 테스트 추가: `teams_pulse_assignment.html` 파싱 케이스
-  - 브랜치 보호 스크립트 보정: required checks `CI / api`, `CI / web-e2e` 동시 반영
-  - 원격 브랜치 보호 재적용 확인(`enforce_admins=true`, `strict=true`)
-  - Web 성능개선 `WEB-Q-001` 1차 적용: `/matches/[id]` 탭 lazy render + dynamic import
+  - `WEB-Q-004` 적용: standings 접근성/모바일 안정화
+  - `WEB-Q-003` 적용: matches 렌더 최적화
+  - `CRAWL-002` CI live validate 성공 및 `COMPLETED` 전환
+  - `CRAWL-002` teams/matches seed fallback 운영정책 반영
+  - Lighthouse baseline/Live validate 워크플로 운영 반영
 - 2026-02-13
-  - API MVP(`API-001`~`API-005`) 완료
-  - OpenAPI 스냅샷/통합 테스트 CI 필수화
-  - 브랜치 보호 적용 및 CI 통과 확인
-  - Web 초기 라우트 및 UI/연동 구현
-  - `web-lint`, `web-build`, `web-dev` 실행 검증 완료
-  - `CRAWL-001` 초기 수집 파이프라인 구현 및 멱등 실행 확인
-  - `BATCH-001`, `BATCH-002` 수동 runner 스켈레톤 상태 문서 반영
-  - `BATCH-001`, `BATCH-002` GitHub Actions 스케줄러 연동 완료 (`Batch Scheduler`)
-  - `BATCH-003` 재시도 정책 + Slack Webhook 실패 알림 연동 완료
-  - `CRAWL-002` 1차 안정화: 다중 파싱 전략(table -> JSON fallback) 및 dataset fallback 정책 도입
-  - `CRAWL-002` fixture(official-like html/json) 기반 테스트 확대
-  - 운영 보강: PR-only/enforce_admins 및 시크릿 체크리스트 문서 반영
+  - API MVP + 테스트/CI 필수화
+  - Web MVP 라우트 구축
+  - Batch scheduler + retry/alert 구축
 
 ## E) Working Rules
 1. 개발 시작 전
-- 반드시 `NEXT_STEPS.md`를 읽고 `Primary Focus` 및 `P0/P1` 우선순위를 확인한다.
-- 새 작업을 시작하면 필요 시 `In Progress`를 업데이트한다.
+- `NEXT_STEPS.md`의 `Primary Focus`, `P0/P1` 확인
+- 작업 시작 시 `C) In Progress` 반영
 
 2. 개발 완료 후
-- 반드시 `NEXT_STEPS.md`의 다음 항목을 갱신한다.
-  - `A) Current Status`
-  - `B) Next Priorities` (우선순위 재정렬)
-  - `C) In Progress` (완료 처리)
-  - `D) Done Log` (날짜/핵심 결과)
+- `A) Current Status`, `B) Next Priorities`, `D) Done Log` 업데이트
 
-3. PR 체크
-- PR 설명에 `NEXT_STEPS.md 반영 여부`를 명시한다.
-- 문서 갱신이 필요한 변경인데 누락된 경우 머지하지 않는다.
+3. PR 규칙
+- PR 본문에 `NEXT_STEPS.md 반영 여부` 명시
+- 문서 반영이 필요한 변경에서 누락 시 머지 금지

@@ -6,112 +6,60 @@
 ```text
 apps/
   web/       # Next.js 프론트엔드
-  api/       # FastAPI(NestJS 대체 가능) 백엔드
-  crawler/   # 배치 크롤러/정합성 검증
+  api/       # FastAPI 백엔드
+  crawler/   # 배치 크롤러/검증 스크립트
 packages/
-  shared/    # 공통 타입/유틸
-infra/       # Docker, 배포/인프라 설정
-docs/        # 로드맵, 태스크 보드, 운영 문서
-AGENTS.md    # 서비스/DB/화면/배치 요구사항
+  shared/    # 공통 타입/유틸(확장 예정)
+infra/       # 배포/인프라 설정(확장 예정)
+docs/        # 운영/로드맵/리포트 문서
+AGENTS.md    # 서비스 요구사항 소스 문서
+NEXT_STEPS.md # 실행 우선순위/진행현황 기준 문서
 ```
 
 ## Quick Start
-현재 API MVP, Web 1차 구현, Crawler/Batch 운영 스캐폴드가 구현되어 있습니다.
-
 ```bash
-make setup   # API 의존성 설치
-make lint    # API lint (ruff)
-make test    # API 테스트 (pytest)
-make dev     # API 서버 실행 (uvicorn, :8000)
-make web-setup  # Web 의존성 설치 (npm)
-make web-dev    # Web 개발 서버 실행 (Next.js, :3000)
-make crawler-ingest  # Crawler 샘플 수집/적재 실행
-make crawler-summary # Crawler 적재 결과 카운트 확인
-make crawler-daily   # BATCH-001 일배치 runner(수동)
-make crawler-weekly  # BATCH-002 주배치 runner(수동)
+make setup        # API 의존성 설치
+make lint         # API lint
+make test         # API 테스트
+make dev          # API 서버 실행 (:8000)
+
+make web-setup    # Web 의존성 설치
+make web-dev      # Web 개발 서버 실행 (:3000)
+make web-lint     # Web lint
+make web-build    # Web production build
+make web-e2e      # Playwright E2E
+
+make crawler-setup    # Crawler 의존성 설치
+make crawler-ingest   # Crawler 적재 실행
+make crawler-summary  # 적재 결과 요약
+make crawler-test     # Crawler 테스트
+make crawler-daily    # 일배치 수동 실행
+make crawler-weekly   # 주배치 수동 실행
 ```
 
-## Batch Scheduler
-- GitHub Actions `Batch Scheduler` 워크플로가 배치 자동 실행을 담당합니다.
-- 스케줄:
-  - 일배치: 매일 09:00 KST (`cron: 0 0 * * *`, UTC 기준)
-  - 주배치: 매주 목요일 12:00 KST (`cron: 0 3 * * 4`, UTC 기준)
-- 수동 실행:
-  - Actions > `Batch Scheduler` > `Run workflow`에서 `all | daily | weekly` 선택
-
-## MVP Scope
-- 홈 대시보드
-- 일정/결과 + 매치 상세(라인업/스탯/타임라인)
-- 순위표
-- 선수 통계
-- 구단 목록/상세
-- 크롤러 배치(매일 09:00, 매주 목 12:00)
-
-## Delivery Plan
-상세 일정과 이슈 단위 작업은 `docs/task-board.md`를 따릅니다.
-API 이후 실행 계획은 `docs/next-development-plan.md`를 따릅니다.
-실행 기준 문서는 `NEXT_STEPS.md`를 따릅니다.
-CI 필수 체크 설정 가이드는 `docs/ci-required-checks.md`를 참고하세요.
-공식 사이트 크롤링 POC 스펙은 `docs/premierleague-crawling-poc.md`를 참고하세요.
-운영 설정/시크릿 가이드는 `docs/operations-config.md`를 참고하세요.
-
-## NEXT_STEPS 운영 규칙
-- 개발 시작 전: `NEXT_STEPS.md` 확인 (Primary Focus + P0/P1 우선순위)
-- 개발 완료 후: `NEXT_STEPS.md` 업데이트 (Current Status, Next Priorities, Done Log)
-- PR 작성 시: `NEXT_STEPS.md` 반영 여부를 명시
-
 ## Current Progress
-- Infra/CI
-  - `OPS-001`~`OPS-003` 완료
-  - `CI / api` 필수 체크, `Batch Scheduler`(일/주 cron + 수동 실행) 적용 완료
-- API
-  - `API-001`~`API-005` 완료
-  - OpenAPI 스냅샷 + API 통합 테스트(`API-002`~`API-005`) CI 필수화
-- Web
-  - `WEB-001`~`WEB-005` 완료 (핵심 라우트 + 모바일 390px 대응)
-  - `make web-lint`, `make web-build` 통과
-  - Playwright E2E 핵심 플로우 2건 추가 및 로컬 실행 검증 완료
-- Crawler/Batch
-  - `CRAWL-001` 완료 (샘플 소스 멱등 업서트)
-  - `CRAWL-002` 진행중 (공식 사이트 `pl` 파서 안정화 완료 + ingest 리포트 템플릿 작성: `docs/crawl-002-ingest-report.md`)
-  - `CRAWL-002` 실사이트 validate 실행에서 SSL 인증서 검증 이슈 확인(`CERTIFICATE_VERIFY_FAILED`)
-  - `BATCH-001`, `BATCH-002` 완료 (스케줄러 연동)
-  - `BATCH-003` 완료 (재시도 + Slack 실패 알림)
+- API: `API-001`~`API-005` 완료, OpenAPI 스냅샷/통합 테스트 CI 필수화
+- Web: MVP 라우트 + `WEB-Q-001`~`WEB-Q-004` 성능/접근성 개선 반영
+- Crawler: `CRAWL-001` 완료, `CRAWL-002` 완료(CI live validate 성공)
+- Batch: 일/주 스케줄 + 재시도 + Slack 알림 구축 완료
+- CI: `CI / api`, `CI / web-e2e`, `Crawler Live Validate`, `Lighthouse Baseline` 운영
 
-## Next Development Plan (Concrete)
-아래 순서대로 구현을 진행합니다.
+## Next Priorities
+1. shadcn 기반 UI 리디자인(홈/매치/구단 핵심 화면)
+2. Netlify 배포 파이프라인(Preview/Production) 구축
+3. 브랜치 보호/PR-only 정책 최종 고정 점검
+4. Lighthouse 회귀 관리 자동화(기준치/경보)
+5. `npm audit` 취약점 정리 계획 수립
 
-1. `CRAWL-002` 마무리: 공식 사이트 실데이터 적재 안정화
-- 작업:
-  - `docs/crawl-002-ingest-report.md` 템플릿 기준으로 `pl` 실측 실행 로그/검증 JSON 수집
-  - `summary` 실제 카운트 채우기(추정치 금지)
-  - 이슈/잔여 리스크 확정 후 상태 `COMPLETED` 판정
-- DoD:
-  - `make crawler-test` 통과
-  - `CRAWLER_DATA_SOURCE=pl` 기준 ingest 결과 리포트 실측값 문서화 완료
-
-2. Web 품질 고도화 1단계: 핵심 사용자 플로우 E2E
-- 작업:
-  - 홈 -> 일정/결과 -> 매치상세
-  - 구단목록 -> 구단상세
-- DoD:
-  - CI에서 E2E 통과(최소 핵심 2플로우)
-
-3. Web 품질 고도화 2단계: 성능/접근성 기준 수립
-- 작업:
-  - Lighthouse 기준치 정의(모바일/데스크탑)
-  - 저점 페이지 우선 개선 항목 backlog 등록
-- DoD:
-  - 목표치와 측정 방법 문서화
-
-4. 운영 안정화
-- 작업:
-  - `main` PR-only 운영 강제 재점검
-  - 배치/알림 시크릿 운영 체크리스트 점검
-- DoD:
-  - `docs/operations-config.md` 기준 설정 완료 확인
+## Core Docs
+- 실행 기준: `NEXT_STEPS.md`
+- 크롤링 POC/정책: `docs/premierleague-crawling-poc.md`
+- CRAWL-002 리포트: `docs/crawl-002-ingest-report.md`
+- CI 필수 체크 가이드: `docs/ci-required-checks.md`
+- 운영 설정/시크릿: `docs/operations-config.md`
 
 ## Contribution Rules
-- 브랜치: `feat/<scope>-<short-desc>`, `fix/<scope>-<short-desc>`
+- 브랜치: `feat/<scope>-<desc>`, `fix/<scope>-<desc>`
 - 커밋: Conventional Commits (`feat:`, `fix:`, `chore:`)
-- PR: 변경 요약, 테스트 결과, 스크린샷(프론트 변경 시) 필수
+- PR 필수: 변경 요약, 테스트 결과, 프론트 변경 시 스크린샷
+- 문서 규칙: 기능/운영 변경 시 `NEXT_STEPS.md` 동기화 필수
