@@ -71,7 +71,6 @@ MATCH_STATS_ALIASES: dict[str, list[str]] = {
     "corners": ["corners", "corner_kicks", "corners_won"],
 }
 
-
 def _normalize_key(value: str) -> str:
     normalized = value.strip()
     normalized = re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", normalized)
@@ -80,6 +79,23 @@ def _normalize_key(value: str) -> str:
     normalized = re.sub(r"[\s\-\/]+", "_", normalized)
     normalized = re.sub(r"[^a-z0-9_]", "", normalized)
     return normalized
+
+
+def _build_seed_short_name_map() -> dict[str, str]:
+    seed_map: dict[str, str] = {}
+    for team in load_seed_teams():
+        raw_name = str(team.get("name", "")).strip()
+        short_name = str(team.get("short_name", "")).strip()
+        if not raw_name or not short_name:
+            continue
+        seed_map[_normalize_key(raw_name)] = short_name
+        fc_trimmed = re.sub(r"\bfc\b", "", raw_name, flags=re.IGNORECASE).strip()
+        if fc_trimmed:
+            seed_map[_normalize_key(fc_trimmed)] = short_name
+    return seed_map
+
+
+_SEED_SHORT_NAME_MAP = _build_seed_short_name_map()
 
 
 def _safe_int(value: str) -> int | None:
@@ -98,6 +114,15 @@ def _safe_float(value: str) -> float | None:
 
 
 def _derive_short_name(team_name: str) -> str:
+    normalized_name = _normalize_key(team_name)
+    if normalized_name in _SEED_SHORT_NAME_MAP:
+        return _SEED_SHORT_NAME_MAP[normalized_name]
+
+    no_fc = re.sub(r"\bfc\b", "", team_name, flags=re.IGNORECASE).strip()
+    normalized_no_fc = _normalize_key(no_fc)
+    if normalized_no_fc in _SEED_SHORT_NAME_MAP:
+        return _SEED_SHORT_NAME_MAP[normalized_no_fc]
+
     cleaned = re.sub(r"[^A-Za-z0-9\s]", " ", team_name).strip()
     if not cleaned:
         return "UNK"
