@@ -45,7 +45,7 @@ make crawler-weekly   # 주배치 수동 실행
 - CI: `CI / api`, `CI / web-e2e`, `Crawler Live Validate`, `Lighthouse Baseline` 운영
 
 ## Next Priorities
-1. Vercel 배포 파이프라인 실배포 검증(Preview/Production)
+1. Vercel Git Integration 실배포 검증(Preview/Production)
 2. 브랜치 보호/PR-only 정책 최종 고정 점검
 3. shadcn UI 리디자인 2차(standings/stats/detail)
 4. Lighthouse 회귀 관리 자동화(기준치/경보)
@@ -57,7 +57,7 @@ make crawler-weekly   # 주배치 수동 실행
 - CRAWL-002 리포트: `docs/crawl-002-ingest-report.md`
 - CI 필수 체크 가이드: `docs/ci-required-checks.md`
 - 운영 설정/시크릿: `docs/operations-config.md`
-- 배포 설정: `.github/workflows/vercel-deploy.yml`
+- 배포 설정: Vercel Dashboard Git Integration (`apps/web`)
 
 ## Contribution Rules
 - 브랜치: `feat/<scope>-<desc>`, `fix/<scope>-<desc>`

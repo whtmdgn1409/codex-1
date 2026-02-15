@@ -45,9 +45,6 @@
 
 ### 1) Must Be GitHub Secrets
 - `BATCH_ALERT_SLACK_WEBHOOK`
-- `VERCEL_TOKEN`
-- `VERCEL_ORG_ID`
-- `VERCEL_PROJECT_ID`
 
 체크리스트:
 1. Repository Settings -> Secrets and variables -> Actions에 저장
@@ -81,17 +78,18 @@
 5. 파서 정책 변경 시 배치 실패/skip 로그를 함께 점검
 6. 민감값(토큰/쿠키/사설 엔드포인트)이 필요해지면 Variables가 아닌 Secrets로 승격
 
-## Vercel Deploy Config
-- 워크플로: `.github/workflows/vercel-deploy.yml`
+## Vercel Git Integration Config
+- 배포 방식: Vercel Dashboard에서 GitHub 저장소 직접 연결
 - 배포 정책:
-  - PR: Deploy Preview 생성 후 PR 코멘트에 URL 기록
-  - `main` push: Production 배포
+  - PR: Vercel Preview 자동 생성
+  - `main`: Vercel Production 자동 배포
 
 체크리스트:
-1. Vercel에서 프로젝트 생성 후 `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`를 GitHub Secrets에 등록
-2. Vercel Project Environment Variables에 `NEXT_PUBLIC_API_BASE_URL`(필수), `NEXT_PUBLIC_SITE_URL`(권장) 설정
-3. PR 생성 시 `Vercel Deploy / deploy-preview` 성공 및 Preview URL 코멘트 확인
-4. `main` 머지 후 `Vercel Deploy / deploy-production` 성공 확인
+1. Vercel Dashboard에서 `whtmdgn1409/codex-1` 저장소 연결
+2. Root Directory를 `apps/web`로 설정
+3. Build Command `npm run build`, Output은 Next.js 기본 설정 사용
+4. Environment Variables에 `NEXT_PUBLIC_API_BASE_URL`(필수), `NEXT_PUBLIC_SITE_URL`(권장) 설정
+5. GitHub에서 기존 Netlify 앱 체크가 남아 있으면 Netlify GitHub App 연결 해제(또는 해당 사이트 unlink)
 
 ## Verification Checklist
 1. `make crawler-test`
