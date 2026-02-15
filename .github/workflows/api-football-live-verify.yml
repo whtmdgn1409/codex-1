@@ -30,6 +30,8 @@ jobs:
       - name: Run API-Football live verify (CRAWL-003)
         env:
           API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
+          API_FOOTBALL_LEAGUE_ID: "39"
+          API_FOOTBALL_SEASON: "2024"
         run: |
           if [ -z "${API_FOOTBALL_KEY}" ]; then
             echo "API_FOOTBALL_KEY is missing"
