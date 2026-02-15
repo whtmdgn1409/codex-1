@@ -3,6 +3,8 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { PropsWithChildren } from "react";
 
+import { cn } from "@/lib/utils";
+
 type NavItem = {
   href?: string;
   label: string;
@@ -38,16 +40,20 @@ export default function Layout({ children }: PropsWithChildren) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
       <div className="page-shell">
-        <header className="site-header">
-          <div className="site-header__inner">
-            <Link href="/" className="brand" aria-label="EPL Information Hub Home">
-              EPL Hub
+        <header className="sticky top-0 z-30 border-b border-border/80 bg-white/85 backdrop-blur">
+          <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+            <Link href="/" className="inline-flex items-center gap-2" aria-label="EPL Information Hub Home">
+              <span className="rounded-full bg-primary px-2 py-1 text-xs font-semibold text-primary-foreground">EPL</span>
+              <span className="text-lg font-black tracking-tight text-primary">Information Hub</span>
             </Link>
-            <nav className="gnb" aria-label="Global navigation">
+            <nav className="flex flex-wrap items-center gap-2" aria-label="Global navigation">
               {NAV_ITEMS.map((item) => {
                 if (!item.href) {
                   return (
-                    <span key={item.label} className="gnb__item gnb__item--disabled">
+                    <span
+                      key={item.label}
+                      className="rounded-full border border-dashed border-border bg-muted/50 px-3 py-1.5 text-sm font-medium text-muted-foreground opacity-70"
+                    >
                       {item.label}
                     </span>
                   );
@@ -57,7 +63,12 @@ export default function Layout({ children }: PropsWithChildren) {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`gnb__item ${isActive(router.pathname, item.href) ? "gnb__item--active" : ""}`}
+                    className={cn(
+                      "rounded-full border px-3 py-1.5 text-sm font-semibold transition-colors",
+                      isActive(router.pathname, item.href)
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border bg-white text-muted-foreground hover:border-primary/40 hover:text-primary"
+                    )}
                   >
                     {item.label}
                   </Link>
@@ -66,7 +77,7 @@ export default function Layout({ children }: PropsWithChildren) {
             </nav>
           </div>
         </header>
-        <main className="site-main">{children}</main>
+        <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8">{children}</main>
       </div>
     </>
   );

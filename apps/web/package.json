@@ -11,17 +11,24 @@
     "lighthouse:baseline": "node ./scripts/run-lighthouse-baseline.mjs"
   },
   "dependencies": {
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.564.0",
     "next": "14.2.5",
     "react": "18.2.0",
-    "react-dom": "18.2.0"
+    "react-dom": "18.2.0",
+    "tailwind-merge": "^3.4.1"
   },
   "devDependencies": {
     "@playwright/test": "1.50.1",
     "@types/node": "20.14.11",
     "@types/react": "18.2.66",
     "@types/react-dom": "18.2.22",
+    "autoprefixer": "^10.4.20",
     "eslint": "8.57.0",
     "eslint-config-next": "14.2.5",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17",
     "typescript": "5.5.4"
   }
 }

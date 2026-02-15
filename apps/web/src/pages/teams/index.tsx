@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { listTeams } from "@/lib/api";
 import { TeamItem } from "@/lib/types";
 
@@ -42,19 +44,35 @@ export default function TeamsPage() {
   }, []);
 
   return (
-    <div className="stack">
-      <h1 className="section-title">구단</h1>
-      {loading && <div className="loading">구단 목록 로딩 중...</div>}
-      {error && <div className="error">구단 목록 조회 실패: {error}</div>}
+    <div className="space-y-6">
+      <section className="space-y-2">
+        <h1 className="text-2xl font-black tracking-tight sm:text-3xl">구단</h1>
+        <p className="text-sm text-muted-foreground">20개 구단 정보를 빠르게 탐색하고 상세 페이지로 이동하세요.</p>
+      </section>
+
+      {loading && <div className="rounded-xl border border-dashed border-border px-4 py-3 text-sm">구단 목록 로딩 중...</div>}
+      {error && (
+        <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
+          구단 목록 조회 실패: {error}
+        </div>
+      )}
 
       {!loading && !error && (
-        <div className="grid grid--3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {teams.map((team) => (
-            <Link key={team.team_id} href={`/teams/${team.team_id}`} className="card stack">
-              <h2 className="card-title">{team.name}</h2>
-              <div className="muted">약어: {team.short_name}</div>
-              <div className="muted">감독: {team.manager ?? "-"}</div>
-              <div className="muted">홈구장: {team.stadium ?? "-"}</div>
+            <Link key={team.team_id} href={`/teams/${team.team_id}`}>
+              <Card className="h-full transition hover:-translate-y-0.5 hover:shadow-md">
+                <CardHeader className="space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <CardTitle className="text-lg">{team.name}</CardTitle>
+                    <Badge variant="secondary">{team.short_name}</Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-2 text-sm text-muted-foreground">
+                  <p>감독: {team.manager ?? "-"}</p>
+                  <p>홈구장: {team.stadium ?? "-"}</p>
+                </CardContent>
+              </Card>
             </Link>
           ))}
         </div>
